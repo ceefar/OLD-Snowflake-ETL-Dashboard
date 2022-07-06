@@ -24,4 +24,16 @@ rows = run_query("SELECT * from redshift_customerdata;")
 # Print results.
 for row in rows:
     st.write(f"{row[0]} has a :{row[1]}:")
+    print(row)
 
+print(rows)
+
+
+
+def run():
+    st.write("Lego")
+
+
+
+
+run()
