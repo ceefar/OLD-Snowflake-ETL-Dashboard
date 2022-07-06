@@ -7,6 +7,7 @@ import snowflake.connector
 # for date time objects
 import datetime # from datetime import datetime
 
+
 # ---- snowflake db setup ----
 # Initialize connection.
 # Uses st.experimental_singleton to only run once.
@@ -25,6 +26,7 @@ def run_query(query):
     with conn.cursor() as cur:
         cur.execute(query)
         return cur.fetchall()
+
 
 # ---- main web app ----
 def run():
@@ -53,8 +55,6 @@ def run():
         tempmetric = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
                                 SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{dateme}';")
 
-        print(f"{tempmetric = }")
-
         try:
             tempmetric1 = float(tempmetric[0][0])
         except TypeError:
@@ -74,13 +74,6 @@ def run():
             tempmetric4 = tempmetric[0][3]
         except TypeError:
             tempmetric4 = 0
-
-
-        print(f"{tempmetric1 = }")
-        print(f"{tempmetric2 = }")
-        print(f"{tempmetric3 = }")
-        print(f"{tempmetric4 = }")
-
 
         # note delta can be can be off, normal, or inverse
         col1.metric(label="Total Revenue", value=f"${tempmetric1:.2f}", delta=f"{1:.2f}", delta_color="normal")
