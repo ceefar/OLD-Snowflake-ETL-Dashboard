@@ -67,7 +67,12 @@ def run():
     # SIDEBAR portfolio/developer mode toggle
     with st.sidebar:
         dev_mode = st.checkbox(label="Portfolio Mode")
-
+        if dev_mode:
+            WIDE_MODE_INFO = """
+            Wide Mode Recommended\n
+            Top right menu buttton -> Settings -> Appearance -> Wide mode
+            """
+            st.info(WIDE_MODE_INFO)
 
     # HEADER section
     topcol1, topcol2 = st.columns([1,5])
@@ -89,59 +94,116 @@ def run():
         with topMetricSelectCol1:
             dateme = st.date_input("What Date Would You Like Info On?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate)  
 
-        with topMetricSelectCol2:
-            selected_stores = st.multiselect(label='What Stores Would You Like Info On?', default=['All'],
-                        options=['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho', 'All', 'Only London', 'Only Outside London'])
+        # PORTFOLIO 
+        if dev_mode:
+            with st.expander("Dynamic User Created SQL Queries (Dictionary Switch, Map, Join)"):
+                with st.echo():
+                    with topMetricSelectCol2:
+                        selected_stores = st.multiselect(label='What Stores Would You Like Info On?', default=['All'],
+                                    options=['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho', 'All', 'Only London', 'Only Outside London'])
 
-            stores_query_selector = {"Only London":"AND store_name = 'London Camden' OR store_name = 'London Soho'", 
-                                    'Only Outside London':"AND store_name = 'Uppingham' OR store_name = 'Longridge' OR store_name = 'Chesterfield'",
-                                    'All':"AND store_name = 'Uppingham' OR store_name = 'Longridge' OR store_name = 'Chesterfield' OR store_name = 'London Camden' OR store_name = 'London Soho'",
-                                    'Uppingham':"AND store_name = 'Uppingham'", 'Longridge':"AND store_name = 'Longridge'", 'Chesterfield':"AND store_name = 'Chesterfield'",
-                                    'London Camden':"AND store_name = 'London Camden'", 'London Soho':"AND store_name = 'London Soho'"}
+                        # dictionary switch case, access keys instead of 5x if statements
+                        stores_query_selector = {"Only London":"AND store_name = 'London Camden' OR store_name = 'London Soho'", 
+                                                'Only Outside London':"AND store_name = 'Uppingham' OR store_name = 'Longridge' OR store_name = 'Chesterfield'",
+                                                'All':"AND store_name = 'Uppingham' OR store_name = 'Longridge' OR store_name = 'Chesterfield' OR store_name = 'London Camden' OR store_name = 'London Soho'",
+                                                'Uppingham':"AND store_name = 'Uppingham'", 'Longridge':"AND store_name = 'Longridge'", 'Chesterfield':"AND store_name = 'Chesterfield'",
+                                                'London Camden':"AND store_name = 'London Camden'", 'London Soho':"AND store_name = 'London Soho'"}
 
-            # switch case to create the final part of the store select query, kinda has to be done this way
-            # since you could accidentally select something like "Only London" + "Chesterfield", in which case "Only" is the override,
-            # with all still having the highest precedent, and being set (to all) if nothing is included, could have been done another way but i like this
-            if len(selected_stores) == 1:
-                final_stores = stores_query_selector[selected_stores[0]]
-            elif len(selected_stores) == 0:
-                final_stores = stores_query_selector["All"]
-            elif "All" in selected_stores:
-                final_stores = stores_query_selector["All"]
-            elif "Only London" in selected_stores:
-                final_stores = stores_query_selector["Only London"]
-            elif "Only Outside London" in selected_stores:
-                final_stores = stores_query_selector["Only Outside London"]
-            else:
-                # join them all, map is needed as lambda applies apostrophes around each item in the iterable e.g. 'London Soho'
-                # obvs if all, only london, and only outside london are removed this is how the query would be created, in one line, clean af
-                final_stores = "AND store_name = " + " OR store_name = ".join(map((lambda a: f"'{a}'"), selected_stores))
-            
+                        # does still need true switch case to create the final part of the store select query,
+                        # needed for cases like "Only London" + "Chesterfield", in which case "Only" is the override,
+                        # with all still having the highest precedent, and will be set to "All" if user selects nothing
+
+                        # if only one thing selected, grab it from the dictionary switch case
+                        if len(selected_stores) == 1:
+                            final_stores = stores_query_selector[selected_stores[0]]
+                        # if nothing selected use "All" from dictionary switch case
+                        elif len(selected_stores) == 0:
+                            final_stores = stores_query_selector["All"]
+                        elif "All" in selected_stores:
+                            final_stores = stores_query_selector["All"]
+                        elif "Only London" in selected_stores:
+                            final_stores = stores_query_selector["Only London"]
+                        elif "Only Outside London" in selected_stores:
+                            final_stores = stores_query_selector["Only Outside London"]
+                        else:
+                            # finally else covers any user selected mix of stores,
+                            # apply map with lambda function to place apostrophes around each item in the iterable e.g. 'London Soho' 
+                            # if all, only london, and only outside london are removed this is how the query would be created, clean one liner
+                            final_stores = "AND store_name = " + " OR store_name = ".join(map((lambda a: f"'{a}'"), selected_stores))
+        else:
+            with topMetricSelectCol2:
+                selected_stores = st.multiselect(label='What Stores Would You Like Info On?', default=['All'],
+                            options=['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho', 'All', 'Only London', 'Only Outside London'])
+
+                stores_query_selector = {"Only London":"AND store_name = 'London Camden' OR store_name = 'London Soho'", 
+                                        'Only Outside London':"AND store_name = 'Uppingham' OR store_name = 'Longridge' OR store_name = 'Chesterfield'",
+                                        'All':"AND store_name = 'Uppingham' OR store_name = 'Longridge' OR store_name = 'Chesterfield' OR store_name = 'London Camden' OR store_name = 'London Soho'",
+                                        'Uppingham':"AND store_name = 'Uppingham'", 'Longridge':"AND store_name = 'Longridge'", 'Chesterfield':"AND store_name = 'Chesterfield'",
+                                        'London Camden':"AND store_name = 'London Camden'", 'London Soho':"AND store_name = 'London Soho'"}
+
+                # switch case to create the final part of the store select query, kinda has to be done this way
+                # since you could accidentally select something like "Only London" + "Chesterfield", in which case "Only" is the override,
+                # with all still having the highest precedent, and being set (to all) if nothing is included, could have been done another way but i like this
+                if len(selected_stores) == 1:
+                    final_stores = stores_query_selector[selected_stores[0]]
+                elif len(selected_stores) == 0:
+                    final_stores = stores_query_selector["All"]
+                elif "All" in selected_stores:
+                    final_stores = stores_query_selector["All"]
+                elif "Only London" in selected_stores:
+                    final_stores = stores_query_selector["Only London"]
+                elif "Only Outside London" in selected_stores:
+                    final_stores = stores_query_selector["Only Outside London"]
+                else:
+                    # join them all, map is needed as lambda applies apostrophes around each item in the iterable e.g. 'London Soho'
+                    # obvs if all, only london, and only outside london are removed this is how the query would be created, in one line, clean af
+                    final_stores = "AND store_name = " + " OR store_name = ".join(map((lambda a: f"'{a}'"), selected_stores))                
         st.write("##")
 
     # METRIC container
     with st.container():
         
-        # for display, create a display string unless the query has length that is the max length (for the query), which means it's "All"
-        # done because we dont want "Uppingham or Longridge or Chesterfield or..."
-        selected_stores_display = final_stores.replace("'","").replace("OR store_name =","or")[16:] if len(final_stores) < 149 else "All"
         st.markdown(f"""###### :calendar: Selected Date : {dateme} """)
+        # PORTFOLIO 
+        if dev_mode:
+            with st.expander("Semi-Complex Ternary Statement"):
+                with st.echo():
+                    # ternary statement to create display string, includes multiple replace methods followed by slice notation
+
+                    # for display, create a display string unless the query has length that is the max length (for the query), which means it's "All"
+                    # done because we dont want "Uppingham or Longridge or Chesterfield or..."
+                    selected_stores_display = final_stores.replace("'","").replace("OR store_name =","or")[16:] if len(final_stores) < 149 else "All"
+        else:
+            selected_stores_display = final_stores.replace("'","").replace("OR store_name =","or")[16:] if len(final_stores) < 149 else "All"
+        
         st.markdown(f"""###### :coffee: Selected Stores : {selected_stores_display} """)
         st.write("##")
 
         # ---- for st.metric header widget ----
         col1, col2, col3, col4 = st.columns(4)
         # PORTFOLIO 
-        with st.expander("See The Queries"):
-            with st.echo():
-                metricVals = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
-                                        SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{dateme}' {final_stores};")
+        if dev_mode:
+            with st.expander("See The Queries"):
+                with st.echo():
+                    metricVals = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
+                                            SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{dateme}' {final_stores};")
 
-                day_before = run_query(f"SELECT DATE(DATEADD(day, -1,'{dateme}'))")
-                day_before = day_before[0][0]
+                    day_before = run_query(f"SELECT DATE(DATEADD(day, -1,'{dateme}'))")
+                    day_before = day_before[0][0]
 
-                metricDeltas = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
-                                        SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{day_before}' {final_stores};")
+                    metricDeltas = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
+                                            SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{day_before}' {final_stores};")
+        else:
+            # this if statement is purely for showing queries and code for portfolio mode (dev mode)
+            # obviously would be no repetition here without dev mode but think it is a great ideaa so keeping it (+ isn't really possible another way)
+            metricVals = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
+                                            SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{dateme}' {final_stores};")
+
+            day_before = run_query(f"SELECT DATE(DATEADD(day, -1,'{dateme}'))")
+            day_before = day_before[0][0]
+
+            metricDeltas = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
+                                    SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{day_before}' {final_stores};")
 
         # get result from queries partially selected by user but apply try except (eafp) as if there is no result returned we want the result to become 0 (not None)                
         metricDeltaResults = split_metric_eafp(metricDeltas[0], "delta")
