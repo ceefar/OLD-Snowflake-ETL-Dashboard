@@ -235,16 +235,25 @@ def run():
         metricErrorCol1, metricErrorCol2 = st.columns([2,1])
         if metricDeltaResults[0] == 0 and metricValueResults[0] == 0:
             metricErrorCol1.error(METRIC_ERROR.format(selected_stores_display, f"{day_before} OR {dateme}", "no selected or previous day available"))
-            metricErrorCol2.image("imgs/missingno.png")
+            try:
+                metricErrorCol2.image("imgs/Missingno.png")
+            except FileNotFoundError:
+                pass
             st.sidebar.info("Cause... Missing Numbers... Get it...")
             show_metric = False            
         elif metricDeltaResults[0] == 0:
             metricErrorCol1.error(METRIC_ERROR.format(selected_stores_display, day_before, "no delta (previous day) available"))
-            metricErrorCol2.image("imgs/missingno.png")
+            try:
+                metricErrorCol2.image("imgs/Missingno.png")
+            except FileNotFoundError:
+                pass
             st.sidebar.info("Cause... Missing Numbers... Get it...")
         elif metricValueResults[0] == 0:
             metricErrorCol1.error(METRIC_ERROR.format(selected_stores_display, dateme, "no selected day data available"))
-            metricErrorCol2.image("imgs/missingno.png")
+            try:
+                metricErrorCol2.image("imgs/Missingno.png")
+            except FileNotFoundError:
+                pass
             st.sidebar.info("Cause... Missing Numbers... Get it...")
 
         if show_metric:
