@@ -131,6 +131,7 @@ def run():
 
         # ---- for st.metric header widget ----
         col1, col2, col3, col4 = st.columns(4)
+        # PORTFOLIO 
         with st.expander("See The Queries"):
             with st.echo():
                 metricVals = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
