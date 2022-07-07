@@ -64,6 +64,10 @@ def run():
     yesterdate = yesterdate[0][0]
     firstdate = firstdate[0][0]
 
+    # SIDEBAR portfolio/developer mode toggle
+    with st.sidebar:
+        dev_mode = st.checkbox(label="Portfolio Mode")
+
 
     # HEADER section
     topcol1, topcol2 = st.columns([1,5])
