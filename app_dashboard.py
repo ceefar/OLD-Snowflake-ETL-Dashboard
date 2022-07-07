@@ -90,7 +90,7 @@ def run():
                         options=['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho', 'All', 'Only London', 'Only Outside London'])
 
             stores_query_selector = {"Only London":"AND store_name = 'London Camden' OR store_name = 'London Soho'", 
-                                    'Outside London':"AND store_name = 'Uppingham' OR store_name = 'Longridge' OR store_name = 'Chesterfield'",
+                                    'Only Outside London':"AND store_name = 'Uppingham' OR store_name = 'Longridge' OR store_name = 'Chesterfield'",
                                     'All':"AND store_name = 'Uppingham' OR store_name = 'Longridge' OR store_name = 'Chesterfield' OR store_name = 'London Camden' OR store_name = 'London Soho'",
                                     'Uppingham':"AND store_name = 'Uppingham'", 'Longridge':"AND store_name = 'Longridge'", 'Chesterfield':"AND store_name = 'Chesterfield'",
                                     'London Camden':"AND store_name = 'London Camden'", 'London Soho':"AND store_name = 'London Soho'"}
@@ -127,14 +127,16 @@ def run():
 
         # ---- for st.metric header widget ----
         col1, col2, col3, col4 = st.columns(4)
+        with st.expander("See The Queries"):
+            with st.echo():
+                metricVals = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
+                                        SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{dateme}' {final_stores};")
 
-        metricVals = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{dateme}' {final_stores};")
+                day_before = run_query(f"SELECT DATE(DATEADD(day, -1,'{dateme}'))")
+                day_before = day_before[0][0]
 
-        day_before = run_query(f"SELECT DATE(DATEADD(day, -1,'{dateme}'))")
-        day_before = day_before[0][0]
-
-        metricDeltas = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
-                                SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{day_before}';")
+                metricDeltas = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
+                                        SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{day_before}' {final_stores};")
 
         # get result from queries partially selected by user but apply try except (eafp) as if there is no result returned we want the result to become 0 (not None)                
         metricDeltaResults = split_metric_eafp(metricDeltas[0], "delta")
