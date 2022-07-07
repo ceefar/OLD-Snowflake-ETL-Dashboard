@@ -39,9 +39,15 @@ def split_metric_eafp(results:tuple, vals_or_delta:str) -> list: # big type hint
         try:
             # if has data in value[i] (which is metricVals/delta[0][i]), set it to list outside of loop to return on complete
             if vals_or_delta == "delta":
-                delta_result.append(value)
+                if value == None:
+                    delta_result.append(0)
+                else:
+                    delta_result.append(value)
             else:
-                values_result.append(value)
+                if value == None:
+                    values_result.append(0)
+                else:               
+                    values_result.append(value)
         except TypeError:
             # if no data will throw type error, if so set to 0 (so it isn't displayed in the metric, or is clear there is no data)
             if vals_or_delta == "delta":
@@ -188,6 +194,7 @@ def run():
         if dev_mode:
             with st.expander("See The Queries"):
                 with st.echo():
+                    # dynamic queries based on user inputs, try changing the date or stores to see updated queries
                     metricVals = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
                                             SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{dateme}' {final_stores};")
 
@@ -217,11 +224,35 @@ def run():
         # delta values are the current day minus the previous day hence why setting above vars through unpacking instead of adding directly to below metric
         metric_tot_rev_delta, metric_avg_spend_delta, metric_tot_cust_delta, metric_tot_cofs_delta = (metric_tot_rev_val - float(metricDeltaResults[0])), (metric_avg_spend_val - float(metricDeltaResults[1])), (metric_tot_cust_val - metricDeltaResults[2]), (metric_tot_cofs_val - metricDeltaResults[3])
 
-        # note delta can be can be off, normal, or inverse (delta = current days value - previous days value)
-        col1.metric(label="Total Revenue", value=f"${metric_tot_rev_val:.2f}", delta=f"${metric_tot_rev_delta:.2f}", delta_color="normal")
-        col2.metric(label="Avg Spend", value=f"${metric_avg_spend_val:.2f}", delta=f"${metric_avg_spend_delta:.2f}", delta_color="normal")
-        col3.metric(label="Total Customers", value=metric_tot_cust_val, delta=metric_tot_cust_delta, delta_color="normal") 
-        col4.metric(label="Total Coffees Sold", value=metric_tot_cofs_val, delta=metric_tot_cofs_delta, delta_color="normal")
+        METRIC_ERROR = """
+            Wild MISSINGNO Appeared!\n
+            No Data for {} on {}\n
+            ({})
+            """
+
+        show_metric = True
+
+        metricErrorCol1, metricErrorCol2 = st.columns([2,1])
+        if metricDeltaResults[0] == 0 and metricValueResults[0] == 0:
+            metricErrorCol1.error(METRIC_ERROR.format(selected_stores_display, f"{day_before} OR {dateme}", "no selected or previous day available"))
+            metricErrorCol2.image("imgs/missingno.png")
+            st.sidebar.info("Cause... Missing Numbers... Get it...")
+            show_metric = False            
+        elif metricDeltaResults[0] == 0:
+            metricErrorCol1.error(METRIC_ERROR.format(selected_stores_display, day_before, "no delta (previous day) available"))
+            metricErrorCol2.image("imgs/missingno.png")
+            st.sidebar.info("Cause... Missing Numbers... Get it...")
+        elif metricValueResults[0] == 0:
+            metricErrorCol1.error(METRIC_ERROR.format(selected_stores_display, dateme, "no selected day data available"))
+            metricErrorCol2.image("imgs/missingno.png")
+            st.sidebar.info("Cause... Missing Numbers... Get it...")
+
+        if show_metric:
+            # note delta can be can be off, normal, or inverse (delta = current days value - previous days value)
+            col1.metric(label="Total Revenue", value=f"${metric_tot_rev_val:.2f}", delta=f"${metric_tot_rev_delta:.2f}", delta_color="normal")
+            col2.metric(label="Avg Spend", value=f"${metric_avg_spend_val:.2f}", delta=f"${metric_avg_spend_delta:.2f}", delta_color="normal")
+            col3.metric(label="Total Customers", value=metric_tot_cust_val, delta=metric_tot_cust_delta, delta_color="normal") 
+            col4.metric(label="Total Coffees Sold", value=metric_tot_cofs_val, delta=metric_tot_cofs_delta, delta_color="normal")
 
         st.write("---")
 
