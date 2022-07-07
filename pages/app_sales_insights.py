@@ -37,7 +37,10 @@ def run():
         stores_list = ['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho']
         store_selector = st.selectbox("Choose The Store", options=stores_list, index=0)
 
-        hour_cups_data = db.get_cups_sold_by_hour_one_store(store_name=store_selector, current_day=currentdate)
+
+        
+
+        hour_cups_data = db.get_cups_sold_by_hour_one_store(store_name=store_selector, current_day=db.get_basic_dates("first"))
         st.write("##")
         # cups, hour, name
         #print(f"{hour_cups_data = }")

@@ -56,9 +56,11 @@ def get_day_before(set_date:datetime) -> datetime:
 
 def get_cups_sold_by_hour_one_store(store_name, current_day) -> tuple:
     """ write me """
-    # obvs
-    cups_by_hour_query = f"SELECT COUNT(i.item_name) AS cupsSold, HOUR(d.timestamp) AS theHour, i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE store = '{store_name}' AND DAY(d.timestamp) = {current_day} GROUP BY d.timestamp, i.item_name"
+    print(f"{store_name = }")
+    print(f"{current_day = }")
+    cups_by_hour_query = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour, i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE store = '{store_name}' AND DATE(d.timestamp) = '{current_day}' GROUP BY d.timestamp, i.item_name"
     cups_by_hour = run_query(cups_by_hour_query)
+    print(cups_by_hour)
     return(cups_by_hour)
 
 
