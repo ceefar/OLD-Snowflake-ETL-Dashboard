@@ -68,7 +68,10 @@ def run():
     # HEADER section
     topcol1, topcol2 = st.columns([1,5])
     topcol2.markdown("## Your Cafe App Dashboard")
-    topcol1.image("imgs\cafe_sign.png")
+    try:
+        topcol1.image("imgs\cafe_sign.png")
+    except:
+        st.write("")
     st.write("##")
     st.write("---")
 
