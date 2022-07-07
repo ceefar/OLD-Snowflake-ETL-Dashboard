@@ -1,4 +1,5 @@
 # app_dashboard.py
+# adheres to pep8 as best possible (no linter)
 
 # ---- imports ----
 # for web app 
@@ -28,8 +29,11 @@ def run_query(query):
         return cur.fetchall()
 
 
-def split_metric_eafp(results, vals_or_delta):
-    """ creates list of query results for the metric values and delta, saves doing a massive switch case since try excepts are needed to set either value or 0 """
+def split_metric_eafp(results:tuple, vals_or_delta:str) -> list: # big type hint enjoyer btw
+    """
+    creates list of query results for the metric values and delta, 
+    saves doing a massive switch case since try excepts are needed to set either value or 0
+    """
     delta_result = []
     values_result = []
     # loop the given list from the query and place it into a new list while performing try except to set either its value or 0 
@@ -98,6 +102,7 @@ def run():
         if dev_mode:
             with st.expander("Dynamic User Created SQL Queries (Dictionary Switch, Map, Join)"):
                 with st.echo():
+                    # note query functions would be in a separate module, left here to show functionality through portfolio/dev mode
                     with topMetricSelectCol2:
                         selected_stores = st.multiselect(label='What Stores Would You Like Info On?', default=['All'],
                                     options=['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho', 'All', 'Only London', 'Only Outside London'])
@@ -225,15 +230,6 @@ def run():
     st.write("##")
 
     # rows = run_query("SELECT * from redshift_customerdata;")
-
-    # Print results.
-    # for row in rows:
-    #    st.write(f"{row[0]} has a :{row[1]}:")
-    #    print(row)
-
-    # print(rows)
-     
-    
 
 run()
 
