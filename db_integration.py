@@ -61,3 +61,8 @@ def get_cups_sold_by_hour_one_store(store_name, current_day) -> tuple:
     return(cups_by_hour)
 
 
+def get_cups_sold_by_time_of_day(time_of_day_enum) -> tuple:
+    """ write me """
+    cups_sold_for_time_of_day_query = f"SELECT COUNT(i.item_name) AS cupsSold, i.item_name, d.time_of_day FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE d.time_of_day = {time_of_day_enum} GROUP BY i.item_name, d.time_of_day ORDER BY i.item_name "
+    cups_sold_for_time_of_day = run_query(cups_sold_for_time_of_day_query)
+    return(cups_sold_for_time_of_day)
