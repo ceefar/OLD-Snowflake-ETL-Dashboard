@@ -14,6 +14,14 @@ import datetime
 import db_integration as db 
 
 
+# ---- db functions ----
+
+def db_get_cups_sold_by_hour_one_store(store_name, current_day):
+    """ write me """
+    cups_sold = db.get_cups_sold_by_hour_one_store(store_name, current_day)
+    return(cups_sold[0][0])
+
+
 def run():
 
     # BASE QUERIES queries
@@ -29,7 +37,6 @@ def run():
         stores_list = ['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho']
         store_selector = st.selectbox("Choose The Store", options=stores_list, index=0)
 
-        # NOTE - IF THIS NEEDS TO BE CACHED ITS BEST TO CREATE A FUNCTION FOR IT HERE
         hour_cups_data = db.get_cups_sold_by_hour_one_store(store_name=store_selector, current_day=currentdate)
         st.write("##")
         # cups, hour, name

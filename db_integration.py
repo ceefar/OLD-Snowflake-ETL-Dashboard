@@ -14,7 +14,7 @@ import datetime
 # initialize connection - uses st.experimental_singleton to only run once.
 @st.experimental_singleton
 def init_connection():
-    return snowflake.connector.connect(**st.secrets["snowflake"], ocsp_fail_open=False)
+    return snowflake.connector.connect(**st.secrets["snowflake"])
 
 conn = init_connection()
 
@@ -22,7 +22,7 @@ conn = init_connection()
 # ig with memo what they want you to do is pull all the data and just manipulate with python but meh
 @st.experimental_memo(ttl=600)
 def run_query(query):
-    """  """
+    """ write me """
     with conn.cursor() as cur:
         cur.execute(query)
         return cur.fetchall()
@@ -52,14 +52,12 @@ def get_day_before(set_date:datetime) -> datetime:
     day_before = run_query(f"SELECT DATE(DATEADD(day, -1,'{set_date}'))")
     # unpack the query before sending
     return(day_before[0][0])
-        
+
 
 def get_cups_sold_by_hour_one_store(store_name, current_day) -> tuple:
     """ write me """
     # obvs
-    cups_by_hour_query = f"SELECT COUNT(i.item_name) AS cupsSold, HOUR(d.time_stamp) AS theHour,\
-                            i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id) \
-                            WHERE store = '{store_name}' AND DAY(d.timestamp) = {current_day} GROUP BY i.item_name, d.timestamp"
+    cups_by_hour_query = f"SELECT COUNT(i.item_name) AS cupsSold, HOUR(d.timestamp) AS theHour, i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE store = '{store_name}' AND DAY(d.timestamp) = {current_day} GROUP BY d.timestamp, i.item_name"
     cups_by_hour = run_query(cups_by_hour_query)
     return(cups_by_hour)
 

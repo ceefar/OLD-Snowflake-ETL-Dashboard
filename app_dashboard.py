@@ -8,15 +8,12 @@ import snowflake.connector
 import streamlit.components.v1 as stc
 # for date time objects
 import datetime # from datetime import datetime
+# for db integration
+import db_integration as db
 
-
-# ---- snowflake db setup ----
-# Initialize connection - uses st.experimental_singleton to only run once.
-@st.experimental_singleton
-def init_connection():
-    return snowflake.connector.connect(**st.secrets["snowflake"], ocsp_fail_open=False)
-
-conn = init_connection()
+# ---- db connection ----
+# connection now started and passed around from db_integration once using singleton
+conn = db.init_connection()
 
 
 # ---- functions ----
