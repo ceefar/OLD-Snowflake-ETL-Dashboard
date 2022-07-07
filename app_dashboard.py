@@ -81,23 +81,56 @@ def run():
 
         st.markdown("#### Daily Snapshot")
         topMetricSelectCol1, topMetricSelectCol2 = st.columns(2)
+
         with topMetricSelectCol1:
-            dateme = st.date_input("What Date Would You Like Info On?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate)        
+            dateme = st.date_input("What Date Would You Like Info On?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate)  
+
+        with topMetricSelectCol2:
+            selected_stores = st.multiselect(label='What Stores Would You Like Info On?', default=['All'],
+                        options=['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho', 'All', 'Only London', 'Only Outside London'])
+
+            stores_query_selector = {"Only London":"AND store_name = 'London Camden' OR store_name = 'London Soho'", 
+                                    'Outside London':"AND store_name = 'Uppingham' OR store_name = 'Longridge' OR store_name = 'Chesterfield'",
+                                    'All':"AND store_name = 'Uppingham' OR store_name = 'Longridge' OR store_name = 'Chesterfield' OR store_name = 'London Camden' OR store_name = 'London Soho'",
+                                    'Uppingham':"AND store_name = 'Uppingham'", 'Longridge':"AND store_name = 'Longridge'", 'Chesterfield':"AND store_name = 'Chesterfield'",
+                                    'London Camden':"AND store_name = 'London Camden'", 'London Soho':"AND store_name = 'London Soho'"}
+
+            # switch case to create the final part of the store select query, kinda has to be done this way
+            # since you could accidentally select something like "Only London" + "Chesterfield", in which case "Only" is the override,
+            # with all still having the highest precedent, and being set (to all) if nothing is included, could have been done another way but i like this
+            if len(selected_stores) == 1:
+                final_stores = stores_query_selector[selected_stores[0]]
+            elif len(selected_stores) == 0:
+                final_stores = stores_query_selector["All"]
+            elif "All" in selected_stores:
+                final_stores = stores_query_selector["All"]
+            elif "Only London" in selected_stores:
+                final_stores = stores_query_selector["Only London"]
+            elif "Only Outside London" in selected_stores:
+                final_stores = stores_query_selector["Only Outside London"]
+            else:
+                # join them all, map is needed as lambda applies apostrophes around each item in the iterable e.g. 'London Soho'
+                # obvs if all, only london, and only outside london are removed this is how the query would be created, in one line, clean af
+                final_stores = "AND store_name = " + " OR store_name = ".join(map((lambda a: f"'{a}'"), selected_stores))
+            
         st.write("##")
 
     # METRIC container
     with st.container():
-
+        
+        # for display, create a display string unless the query has length that is the max length (for the query), which means it's "All"
+        # done because we dont want "Uppingham or Longridge or Chesterfield or..."
+        selected_stores_display = final_stores.replace("'","").replace("OR store_name =","or")[16:] if len(final_stores) < 149 else "All"
         st.markdown(f"""###### :calendar: Selected Date : {dateme} """)
-        st.markdown("""###### :coffee: Selected Stores : All """)
+        st.markdown(f"""###### :coffee: Selected Stores : {selected_stores_display} """)
         st.write("##")
+
         # ---- for st.metric header widget ----
         col1, col2, col3, col4 = st.columns(4)
 
-        metricVals = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
-                                SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{dateme}';")
+        metricVals = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{dateme}' {final_stores};")
 
-        day_before = run_query(f"SELECT DATE(DATEADD(day,-1,'{dateme}'))")
+        day_before = run_query(f"SELECT DATE(DATEADD(day, -1,'{dateme}'))")
         day_before = day_before[0][0]
 
         metricDeltas = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
@@ -130,6 +163,8 @@ def run():
     #    print(row)
 
     # print(rows)
+     
+    
 
 run()
 
