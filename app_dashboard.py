@@ -1,31 +1,47 @@
 # app_dashboard.py
-# adheres to pep8 as best possible (no linter)
+# manually adheres to pep8 as best possible (no linter)
 
 # ---- imports ----
+
 # for web app 
 import streamlit as st
 import snowflake.connector
 import streamlit.components.v1 as stc
+from streamlit.errors import StreamlitAPIException
 # for date time objects
 import datetime # from datetime import datetime
 # for db integration
 import db_integration as db
 
 
+# ---- page setup ----
+
+# set page config needs to be the first streamlit action that is run for it to work, sets the layout default to wide
+def on_load():
+    st.set_page_config(layout="wide")
+
+# catch error in case that file is reloaded locally so app thinks config hasn't run first
+try: 
+    on_load()
+except StreamlitAPIException:
+    pass
+ 
+ 
 # ---- db connection ----
+
 # connection now started and passed around from db_integration once using singleton
 conn = db.init_connection()
 
-
-# ---- functions ----
-# Perform get/fetch query - uses st.experimental_memo to only rerun when the query changes or after 10 min.
+# perform get/fetch query - uses st.experimental_memo to only rerun when the query changes or after 10 min.
 @st.experimental_memo(ttl=600)
 def run_query(query):
-    """ ig with memo what they want you to do is pull all the data and just manipulate with python but meh """
+    """ self referencing """
     with conn.cursor() as cur:
         cur.execute(query)
         return cur.fetchall()
 
+
+# ---- functions ----
 
 def split_metric_eafp(results:tuple, vals_or_delta:str) -> list: # big type hint enjoyer btw
     """
@@ -62,6 +78,7 @@ def split_metric_eafp(results:tuple, vals_or_delta:str) -> list: # big type hint
 
 
 # ---- main web app ----
+
 def run():
 
     # BASE QUERIES queries
@@ -77,8 +94,9 @@ def run():
         dev_mode = st.checkbox(label="Portfolio Mode")
         if dev_mode:
             WIDE_MODE_INFO = """
-            Wide Mode Recommended\n
-            Top right menu buttton -> Settings -> Appearance -> Wide mode
+            Portfolio Mode Active\n
+            Check out expanders to see the live code snippets which have executed
+            (note wide mode is recommened for portfolio mode, but is also set by default)
             """
             st.info(WIDE_MODE_INFO)
 
@@ -204,8 +222,7 @@ def run():
                     metricDeltas = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
                                             SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{day_before}' {final_stores};")
         else:
-            # this if statement is purely for showing queries and code for portfolio mode (dev mode)
-            # obviously would be no repetition here without dev mode but think it is a great ideaa so keeping it (+ isn't really possible another way)
+            # this if else repetition is purely for showing queries and code for portfolio mode (dev mode)
             metricVals = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
                                             SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day = '{dateme}' {final_stores};")
 
@@ -267,8 +284,14 @@ def run():
 
     st.write("##")
 
-    # rows = run_query("SELECT * from redshift_customerdata;")
 
-run()
 
+# driver
+try:
+    run()
+except snowflake.connector.errors.ProgrammingError:
+    # testing error handling for app losing connection, rerun connection singleton, initialise connectoin, then run web app
+    db.init_connection()
+    conn = db.init_connection()
+    run()
 

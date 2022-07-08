@@ -14,13 +14,21 @@ import datetime
 import db_integration as db 
 
 
-# ---- db functions ----
-# cache this function?
-def db_get_cups_sold_by_hour_one_store(store_name, current_day):
-    """ write me """
-    cups_sold = db.get_cups_sold_by_hour_one_store(store_name, current_day)
-    return(cups_sold[0][0])
+# ---- db connection ----
 
+# connection now started and passed around from db_integration once using singleton
+conn = db.init_connection()
+
+# perform get/fetch query - uses st.experimental_memo to only rerun when the query changes or after 10 min.
+@st.experimental_memo(ttl=600)
+def run_query(query):
+    """ self referencing """
+    with conn.cursor() as cur:
+        cur.execute(query)
+        return cur.fetchall()
+
+
+# ---- main web app ----
 
 def run():
 
@@ -37,7 +45,12 @@ def run():
         stores_list = ['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho']
         store_selector = st.selectbox("Choose The Store", options=stores_list, index=0)        
 
-        hour_cups_data = db.get_cups_sold_by_hour_one_store(store_name=store_selector, current_day=db.get_basic_dates("first"))
+        current_day=db.get_basic_dates("first")
+        cups_by_hour_query = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
+                            i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id)\
+                            WHERE store = '{store_selector}' AND DATE(d.timestamp) = '{current_day}' GROUP BY d.timestamp, i.item_name"
+        hour_cups_data = run_query(cups_by_hour_query)
+
         st.write("##")
         just_names_list = []
         just_hour_list = []

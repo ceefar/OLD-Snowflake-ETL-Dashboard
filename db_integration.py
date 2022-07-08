@@ -1,5 +1,11 @@
 # db_integration.py
 
+# ---- note ----
+
+# normally this would be filled with all db queries, 
+# but since using portolio mode and echo many queries are with their respective modules
+
+
 # ---- imports ----
 
 # for web app 
@@ -28,7 +34,9 @@ def run_query(query):
         return cur.fetchall()
 
 
-# ---- query functions ----
+# ---- general query functions ----
+
+# generally expected to be used in multiple pages/modules
 
 def get_basic_dates(return_date:str) -> datetime: # actually returns datetime.date but might refactor
     """ 
@@ -54,8 +62,11 @@ def get_day_before(set_date:datetime) -> datetime:
     return(day_before[0][0])
 
 
+# ---- sales insights ----
+# used primarily by given module, though not necessarily exclusively
+
 def get_cups_sold_by_hour_one_store(store_name, current_day) -> tuple:
-    """ write me """
+    """ moved to module for echo """
     cups_by_hour_query = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour, i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE store = '{store_name}' AND DATE(d.timestamp) = '{current_day}' GROUP BY d.timestamp, i.item_name"
     cups_by_hour = run_query(cups_by_hour_query)
     return(cups_by_hour)
