@@ -46,9 +46,11 @@ def run():
 
     # ALTAIR CHART item type sold by hour of day
     with st.container():
-        st.write(f"### :bulb: Insight - Sales vs Time of Day") # time of day popularity or sumnt?
+        st.write(f"### :bulb: Insight - Sales vs Time of Day") 
+        st.write("##### Popularity - Doesn't Include 3 Most Popular Items") # because they are all favoured so really theres 15 not 3
+        st.write("##")
 
-        stores_list = ['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho']
+        stores_list = ['Chesterfield', 'Uppingham', 'Longridge',  'London Camden', 'London Soho']
         altairChartSelectCol1, altairChartSelectCol2 = st.columns(2)
         with altairChartSelectCol1:
             current_day = st.date_input("What Date Would You Like Info On?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate)  
@@ -116,7 +118,7 @@ def run():
         # if no data returned for store and day then show missingno (missing number) error
         if hour_cups_data:
             st.altair_chart(bar_chart4 + text4, use_container_width=True)
-            with st.expander("GET YOUR INSIGHTS"):
+            with st.expander("Gain Insight"):
                 insightCol1, insightCol2, insightCol3 = st.columns([1,5,1])
                 insightCol2.success(INSIGHT_TIP_1)
                 insightCol1.image("imgs/insight.png", width=140)
@@ -138,25 +140,175 @@ def run():
         st.write("---")
 
 
+
+
+
+
+
+
+
+
+
+    # ---- NEW ----
+
         
+    # ALTAIR CHART product sold by hour of day (COMPARE 2?!) - INDIVIDUAL ITEM VERSION OF ABOVE
+    with st.container():
+        st.write(f"### :bulb: Insight - Compare Two Items") 
+
+        # new store selector
+        store_selector_2 = st.selectbox(label="Choose The Store", key="store_select_2", options=stores_list, index=0) 
+        
+        # new date selector
+        current_day_2 = st.date_input("What Date Would You Like Info On?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="day_select_2")  
+
+        # get only main item name
+        get_main_item = run_query(f"SELECT DISTINCT i.item_name FROM redshift_customeritems i INNER JOIN redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE d.store = '{store_selector_2}'")
+        final_main_item_list = []
+        for item in get_main_item:
+            final_main_item_list.append(item[0])
+    
+        # select any item from the store for comparison
+        item1Col, _, item2Col = st.columns([3,1,3])
+        with item1Col:
+            item_selector_1 = st.selectbox(label=f"Choose An Item From Store {store_selector_2}", key="item_selector_1", options=final_main_item_list, index=0) 
+        with item2Col:
+            item_selector_2 = st.selectbox(label=f"Choose An Item From Store {store_selector_2}", key="item_selector_2", options=final_main_item_list, index=1)
+
+        # MAKE FUNCTION AND REUSE THE QUERY FFS
+        cups_by_hour_query_2 = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
+                            i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id)\
+                            WHERE store = '{store_selector_2}' AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_1}' GROUP BY d.timestamp, i.item_name"
+        hour_cups_data_2 = run_query(cups_by_hour_query_2)
+
+        cups_by_hour_query_3 = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
+                            i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id)\
+                            WHERE store = '{store_selector_2}' AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_2}' GROUP BY d.timestamp, i.item_name"
+        hour_cups_data_3 = run_query(cups_by_hour_query_3)
+
+        #print(hour_cups_data_2)
+        #print(hour_cups_data_3)
+
+        # WHAT WE WANT HERE IS ADVANCED MODE FOR SELECTING EVEN MORE DETAIL
+        # AND PROPER COMPARISON OF 2 ITEMS
+
+        st.write("##")
+
+        # CREATE AND PRINT THE ALTAIR CHART
+
+        # MAKE WHOLE THING A FUNCTION (FUNCTION OF FUNCTIONS TBF - BREAK UP AT RELEVANT POINTS) AND CAN REUSE IT TOO! 
+
+        just_names_list_2 = []
+        just_hour_list_2 = []
+        just_cupcount_list_2 = []
+        for cups_data in hour_cups_data_2:
+            just_cupcount_list_2.append(cups_data[0])
+            just_hour_list_2.append(cups_data[1])
+            just_names_list_2.append(cups_data[2])
+        
+        just_names_list_3 = []
+        just_hour_list_3 = []
+        just_cupcount_list_3 = []
+        for cups_data in hour_cups_data_3:
+            just_cupcount_list_3.append(cups_data[0])
+            just_hour_list_3.append(cups_data[1])
+            just_names_list_3.append(cups_data[2])
+
+        just_names_list_2.extend(just_names_list_3)
+        just_hour_list_2.extend(just_hour_list_3)
+        just_cupcount_list_2.extend(just_cupcount_list_3)
+
+        source2 = pd.DataFrame({
+        "DrinkName": just_names_list_2,
+        "CupsSold":  just_cupcount_list_2,
+        "HourOfDay": just_hour_list_2
+        })
+
+        print(source2)
+
+        source3 = pd.DataFrame({
+        "DrinkName": just_names_list_3,
+        "CupsSold":  just_cupcount_list_3,
+        "HourOfDay": just_hour_list_3
+        })
+
+        bar_chart2 = alt.Chart(source2).mark_bar().encode(
+            color="DrinkName:N", # x="month(Date):O",
+            x="sum(CupsSold):Q",
+            y="HourOfDay:N"
+        ).properties(height=300)
+
+        text2 = alt.Chart(source2).mark_text(dx=-10, dy=3, color='white', fontSize=12, fontWeight=600).encode(
+            x=alt.X('sum(CupsSold):Q', stack='zero'),
+            y=alt.Y('HourOfDay:N'),
+            detail='DrinkName:N',
+            text=alt.Text('sum(CupsSold):Q', format='.0f')
+        )
+
+        st.altair_chart(bar_chart2 + text2, use_container_width=True)
+
+
+
+        # PIE CHART - OBVS MOVE BUT DO KEEP THIS CODE AS LIKELY DO A PIE CHART SOON ENOUGH
+        #pie_chart1 = alt.Chart(source2).mark_arc(innerRadius=50).encode(
+        #    #color="DrinkName:N", # x="month(Date):O",
+        #    theta="sum(CupsSold):Q",
+        #    color="HourOfDay:N"
+        #).properties(height=300)
+        #
+        #st.altair_chart(pie_chart1, use_container_width=True)
+
+
+
+        st.write("##")
+        st.write("##")
+        st.write("---")
 
 
 
 
-# DO INDIVIDUAL ITEM VERSION OF ABOVE HERE!
+
+############# FOR MENU PRINT ################
+    
+    # new store selector
+    store_selector_4 = st.selectbox(label="Choose The Store", key="store_select_4", options=stores_list, index=0) 
+    
+    # get every valid unique combination of item, size and flavour, returned as tuple for the selected store only
+    get_menu = run_query(f"SELECT DISTINCT i.item_name, i.item_size, i.item_flavour FROM redshift_customeritems i INNER JOIN redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE d.store = '{store_selector_4}'")
+    # query for all below
+    # get_menu = run_query("SELECT DISTINCT item_name, item_size, item_flavour AS unique_items FROM redshift_customeritems")
+    final_menu = []
+    for item in get_menu:
+        final_item = []
+        # remove any None types from the tuple returned from the query
+        dont_print = [final_item.append(subitem) for subitem in item if subitem is not None]
+        # join each element of iterable in to one string with spaces between
+        menu_item = (" ".join(final_item))
+        # format and append all items to a list for user selection
+        menu_item = menu_item.title().strip()
+        final_menu.append(menu_item)
+
+    # select any item from the store for comparison
+    item_selector_1 = st.selectbox(label=f"Choose An Item From Store {store_selector_4}", key="item_selector_1", options=final_menu, index=0) 
+
+    st.write("##")
+    st.write("---")
+
+
+###############################################
 
 
 
-    ###################################################################
-    #                                                                 #
-    #                                                                 #
-    # BIG N0TE - GUNA WANT ECHO AND DEV MODE HERE LIKE FUCK BOIIIIII! #
-    #                                                                 #
-    #                                                                 #
-    ###################################################################
 
 
 
+
+
+
+
+
+    
+    ## ADD TO CONTAINER BELOW
 
 
     breakfast_sales = db.get_cups_sold_by_time_of_day(1)
