@@ -3,7 +3,6 @@
 # ---- imports ----
 
 # for web app 
-from pyrsistent import s
 import streamlit as st
 import streamlit.components.v1 as stc
 # for charts, dataframes, data manipulation
@@ -47,7 +46,8 @@ def run():
     # ALTAIR CHART item type sold by hour of day
     with st.container():
         st.write(f"### :bulb: Insight - Sales vs Time of Day") 
-        st.write("##### Popularity - Doesn't Include 3 Most Popular Items") # because they are all favoured so really theres 15 not 3
+        st.write("##### AKA Popularity")
+        st.write("Includes everything except the 3 most popular items") # because they are all favoured so really theres 15 not 3
         st.write("##")
 
         stores_list = ['Chesterfield', 'Uppingham', 'Longridge',  'London Camden', 'London Soho']
@@ -102,6 +102,72 @@ def run():
             detail='DrinkName:N',
             text=alt.Text('sum(CupsSold):Q', format='.0f')
         )
+
+        # ---- end altair table creation ----
+        # note hasn't been initialised yet tho
+
+
+        # ---- start new insights calculation ----
+
+        # BIG N0TE!
+        #   - 100 need try except incase hour data is missing or all data is missing btw
+ 
+        # sum_9 = sum(source4['HourOfDay'] == 9)
+        # details = source4.apply(lambda x : True if x['HourOfDay'] == 9 else False, axis = 1)
+        # temptemp = len(details[details == True].index)
+        # print(source4.iloc[[18]])
+
+        # FIXME 
+        # TODO 
+        # PORTFOLIO - PUT THIS SHIT IN ECHO, MANS IS A GOATPANDA NOW... jesus i need to sleep XD
+        # get sum of cupsSold column based on condition (HourOfDay == x)
+        sum9cups = source4.loc[source4['HourOfDay'] == 9, 'CupsSold'].sum()
+        sum10cups = source4.loc[source4['HourOfDay'] == 10, 'CupsSold'].sum()
+        sum11cups = source4.loc[source4['HourOfDay'] == 11, 'CupsSold'].sum()
+        sum12cups = source4.loc[source4['HourOfDay'] == 12, 'CupsSold'].sum()
+
+        # get unique values in HourOfDay column to loop (returns array object so convert to list)
+        # note returned list is not sorted (doesn't really make a difference but meh)
+        # uniqueCols = source4['HourOfDay'].unique()
+        # print(type(uniqueCols)) # -> numpy.ndarray
+        # uniqueCols = list(uniqueCols)
+        
+        uniqueCols = sorted(list(source4['HourOfDay'].unique()))
+
+        print(f"{sum9cups = }")
+        print(f"{sum10cups = }")
+        print(f"{sum11cups = }")
+        print(f"{sum12cups = }")
+        print(f"{uniqueCols = }")
+
+        randolist = []
+        results_dict = {}
+        for value in uniqueCols:
+            cupForHour = source4.loc[source4['HourOfDay'] == value, 'CupsSold'].sum()
+            results_dict[value] = cupForHour
+
+        dont_print_2 = [randolist.append(f"{value} = {source4.loc[source4['HourOfDay'] == value, 'CupsSold'].sum()}") for value in uniqueCols]
+        print(f"{randolist = }")
+
+        print(f"{results_dict = }")
+
+        sort_by_value = dict(sorted(results_dict.items(), key=lambda x: x[1])) 
+        print(f"{sort_by_value = }")       
+
+        sort_by_value_list = list(map(lambda x: (f"{x[1]} items sold at {x[0]}pm") if x[0] > 11 else (f"{x[1]} items sold at {x[0]}am"), sort_by_value.items()))
+
+        worst_performer = sort_by_value_list[0]
+        best_performer = sort_by_value_list[-1]
+
+        print(sort_by_value_list)
+        print(f"{worst_performer = }") 
+        print(f"{best_performer = }") 
+
+
+        print("- - - ")
+
+        # end insights calc
+
         
         METRIC_ERROR = """
             Wild MISSINGNO Appeared!\n
@@ -109,22 +175,24 @@ def run():
             ({})
             """
 
-        INSIGHT_TIP_1 = """
+        INSIGHT_TIP_1 = f"""
             SAVING INSIGHT!\n
             Try to reduce overhead (staff hours) during prolonged quieter periods for huge savings\n
-            Consider cutting back on products with less sales and smaller margins
+            Consider cutting back on products with less sales and smaller margins\n
+            Worst Performer = {worst_performer} - Consider offers at this time + less staff\n
+            Best Performer = {best_performer} - Ensure staff numbers with strong workers at this time to maximise sales
             """
 
         # if no data returned for store and day then show missingno (missing number) error
         if hour_cups_data:
             st.altair_chart(bar_chart4 + text4, use_container_width=True)
             with st.expander("Gain Insight"):
-                insightCol1, insightCol2, insightCol3 = st.columns([1,5,1])
+                insightCol1, insightCol2 = st.columns([1,5])
                 insightCol2.success(INSIGHT_TIP_1)
                 insightCol1.image("imgs/insight.png", width=140)
                 #print(store_selector)
                 # if london then join
-                #insightCol3.image(f"imgs/coffee-shop-light-{}.png", width=140)
+                #insightCol1.image(f"imgs/coffee-shop-light-{}.png", width=140)
         else:
             altairChartCol1, altairChartCol2 = st.columns([2,2])
             try:
@@ -223,8 +291,6 @@ def run():
         "CupsSold":  just_cupcount_list_2,
         "HourOfDay": just_hour_list_2
         })
-
-        print(source2)
 
         source3 = pd.DataFrame({
         "DrinkName": just_names_list_3,
