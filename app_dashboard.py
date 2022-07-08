@@ -290,9 +290,15 @@ def run():
             store_list = ['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho']
             for store_name in store_list:
                 if store_name in final_stores:
-                    store_dict[store_name]["Col"].image(store_dict[store_name]["ImgClr"])
+                    try:
+                        store_dict[store_name]["Col"].image(store_dict[store_name]["ImgClr"])
+                    except FileNotFoundError:
+                        print("")
                 else:
-                    store_dict[store_name]["Col"].image(store_dict[store_name]["ImgStr"])
+                    try:
+                        store_dict[store_name]["Col"].image(store_dict[store_name]["ImgStr"])
+                    except FileNotFoundError:
+                        print("")
 
         store_img_display()
 
