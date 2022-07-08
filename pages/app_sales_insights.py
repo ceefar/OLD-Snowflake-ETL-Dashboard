@@ -134,11 +134,11 @@ def run():
         
         uniqueCols = sorted(list(source4['HourOfDay'].unique()))
 
-        print(f"{sum9cups = }")
-        print(f"{sum10cups = }")
-        print(f"{sum11cups = }")
-        print(f"{sum12cups = }")
-        print(f"{uniqueCols = }")
+        #print(f"{sum9cups = }")
+        #print(f"{sum10cups = }")
+        #print(f"{sum11cups = }")
+        #print(f"{sum12cups = }")
+        #print(f"{uniqueCols = }")
 
         randolist = []
         results_dict = {}
@@ -147,24 +147,24 @@ def run():
             results_dict[value] = cupForHour
 
         dont_print_2 = [randolist.append(f"{value} = {source4.loc[source4['HourOfDay'] == value, 'CupsSold'].sum()}") for value in uniqueCols]
-        print(f"{randolist = }")
+        #print(f"{randolist = }")
 
-        print(f"{results_dict = }")
+        #print(f"{results_dict = }")
 
         sort_by_value = dict(sorted(results_dict.items(), key=lambda x: x[1])) 
-        print(f"{sort_by_value = }")       
+        #print(f"{sort_by_value = }")       
 
         sort_by_value_list = list(map(lambda x: (f"{x[1]} items sold at {x[0]}pm") if x[0] > 11 else (f"{x[1]} items sold at {x[0]}am"), sort_by_value.items()))
 
         worst_performer = sort_by_value_list[0]
         best_performer = sort_by_value_list[-1]
 
-        print(sort_by_value_list)
-        print(f"{worst_performer = }") 
-        print(f"{best_performer = }") 
+        #print(sort_by_value_list)
+        #print(f"{worst_performer = }") 
+        #print(f"{best_performer = }") 
 
 
-        print("- - - ")
+        #print("- - - ")
 
         # end insights calc
 
