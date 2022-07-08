@@ -26,7 +26,7 @@ try:
 except StreamlitAPIException:
     pass
  
- 
+
 # ---- db connection ----
 
 # connection now started and passed around from db_integration once using singleton
@@ -95,8 +95,7 @@ def run():
         if dev_mode:
             WIDE_MODE_INFO = """
             Portfolio Mode Active\n
-            Check out expanders to see the live code snippets which have executed
-            (note wide mode is recommened for portfolio mode, but is also set by default)
+            Check out expanders to see the live code blocks which have executed
             """
             st.info(WIDE_MODE_INFO)
 
