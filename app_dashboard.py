@@ -12,6 +12,8 @@ from streamlit.errors import StreamlitAPIException
 import datetime # from datetime import datetime
 # for db integration
 import db_integration as db
+# for images and img manipulation
+import PIL
 
 
 # ---- page setup ----
@@ -101,9 +103,9 @@ def run():
 
     # HEADER section
     topcol1, topcol2 = st.columns([1,5])
-    topcol2.markdown("## Your Cafe App Dashboard")
+    topcol2.markdown("# Your Dashboard")
     try:
-        topcol1.image("imgs/cafe_sign.png")
+        topcol1.image("imgs/cafe_sign.png", width=120)
     except:
         st.write("")
     st.write("##")
@@ -207,7 +209,6 @@ def run():
         st.write("##")
 
         # ---- for st.metric header widget ----
-        col1, col2, col3, col4 = st.columns(4)
         # PORTFOLIO 
         if dev_mode:
             with st.expander("See The Queries"):
@@ -272,6 +273,34 @@ def run():
             except FileNotFoundError:
                 pass
             st.sidebar.info("Cause... Missing Numbers... Get it...")
+
+        
+        _, storeCol1, storeCol2, storeCol3, storeCol4, storeCol5, _ = st.columns(7)
+        st.write("---")
+        col1, col2, col3, col4 = st.columns(4)
+
+        def store_img_display():
+            """ display stores as saturated img if not in search query, else full colour - uses dict switch with column object as value """
+            store_dict = {"Uppingham":{"Col":storeCol1, "ImgClr":"imgs/coffee-shop-light-uppingham.png", "ImgStr":"imgs/coffee-shop-light-uppingham-saturated.png"},
+                          "Longridge":{"Col":storeCol2, "ImgClr":"imgs/coffee-shop-light-longridge.png", "ImgStr":"imgs/coffee-shop-light-longridge-saturated.png"},
+                          "Chesterfield":{"Col":storeCol3, "ImgClr":"imgs/coffee-shop-light-chesterfield.png", "ImgStr":"imgs/coffee-shop-light-chesterfield-saturated.png"},
+                          "London Camden":{"Col":storeCol4, "ImgClr":"imgs/coffee-shop-light-london-camden.png", "ImgStr":"imgs/coffee-shop-light-london-camden-saturated.png"},
+                          "London Soho":{"Col":storeCol5, "ImgClr":"imgs/coffee-shop-light-london-soho.png", "ImgStr":"imgs/coffee-shop-light-london-soho-saturated.png"},
+                        }
+            store_list = ['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho']
+            for store_name in store_list:
+                if store_name in final_stores:
+                    try:
+                        store_dict[store_name]["Col"].image(store_dict[store_name]["ImgClr"])
+                    except FileNotFoundError:
+                        print("")
+                else:
+                    try:
+                        store_dict[store_name]["Col"].image(store_dict[store_name]["ImgStr"])
+                    except FileNotFoundError:
+                        print("")
+
+        store_img_display()
 
         if show_metric:
             # note delta can be can be off, normal, or inverse (delta = current days value - previous days value)

@@ -3,6 +3,7 @@
 # ---- imports ----
 
 # for web app 
+from pyrsistent import s
 import streamlit as st
 import streamlit.components.v1 as stc
 # for charts, dataframes, data manipulation
@@ -30,34 +31,49 @@ def run_query(query):
 
 # ---- main web app ----
 
+with st.sidebar:
+    devmode = st.checkbox("Portfolio Mode")
+
 def run():
 
     # BASE QUERIES queries
-    currentdate = db.get_basic_dates("current")
+    currentdate = run_query("SELECT DATE(GETDATE())")
+    yesterdate = run_query("SELECT DATE(DATEADD(day,-1,GETDATE()))")
+    firstdate = run_query("SELECT current_day FROM redshift_bizinsights ORDER BY current_day ASC LIMIT 1")
+    currentdate = currentdate[0][0]
+    yesterdate = yesterdate[0][0]
+    firstdate = firstdate[0][0]
 
-    # CHART NEW TEST hour and user input
-    # NEEDS TO BE CACHED!
+    # ALTAIR CHART item type sold by hour of day
     with st.container():
-        st.write(f"#### Stores Sales Insights dayname_daynumb_string - By Hour Of The Day") # time of day popularity or sumnt?
-        st.write("Try to reduce overhead (staff hours) during prolonged quieter periods for huge savings")
-        st.write("##")
+        st.write(f"### :bulb: Insight - Sales vs Time of Day") # time of day popularity or sumnt?
 
         stores_list = ['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho']
-        store_selector = st.selectbox("Choose The Store", options=stores_list, index=0)        
+        altairChartSelectCol1, altairChartSelectCol2 = st.columns(2)
+        with altairChartSelectCol1:
+            current_day = st.date_input("What Date Would You Like Info On?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate)  
+        with altairChartSelectCol2:
+            store_selector = st.selectbox("Choose The Store", options=stores_list, index=0) 
 
         # PORTFOLIO 
         # ADD FUCKING COMMENTS && EXPANDER && PORTFOLIO MODE CHECKBOX TO SIDEBAR 
-        with st.expander("Complex 'Join/Group By' SQL Query (converted from original complex MySQL Query)"):       
-            with st.echo():
-                # note - data hosted on redshift, moved to s3 bucket, then transferred to snowflake warehouse
-                # write comments here pls
-                current_day=db.get_basic_dates("first")
-                cups_by_hour_query = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
-                                    i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id)\
-                                    WHERE store = '{store_selector}' AND DATE(d.timestamp) = '{current_day}' GROUP BY d.timestamp, i.item_name"
-                hour_cups_data = run_query(cups_by_hour_query)
+        if devmode:
+            with st.expander("Complex 'Join/Group By' SQL Query (converted from original complex MySQL Query)"):       
+                with st.echo():
+                    # note - data hosted on redshift, moved to s3 bucket, then transferred to snowflake warehouse
+                    # inner join data and items tables on matching transaction ids, for each store, at set dates for each item
+                    cups_by_hour_query = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
+                                        i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id)\
+                                        WHERE store = '{store_selector}' AND DATE(d.timestamp) = '{current_day}' GROUP BY d.timestamp, i.item_name"
+                    hour_cups_data = run_query(cups_by_hour_query)
+        else:
+            cups_by_hour_query = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
+                                i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id)\
+                                WHERE store = '{store_selector}' AND DATE(d.timestamp) = '{current_day}' GROUP BY d.timestamp, i.item_name"
+            hour_cups_data = run_query(cups_by_hour_query)
 
         st.write("##")
+        
         just_names_list = []
         just_hour_list = []
         just_cupcount_list = []
@@ -76,21 +92,58 @@ def run():
             color="DrinkName:N", # x="month(Date):O",
             x="sum(CupsSold):Q",
             y="HourOfDay:N"
-        ).properties(height=300, width=1000)
+        ).properties(height=300)
 
-        text4 = alt.Chart(source4).mark_text(dx=-15, dy=3, color='white', fontSize=12, fontWeight=600).encode(
+        text4 = alt.Chart(source4).mark_text(dx=-10, dy=3, color='white', fontSize=12, fontWeight=600).encode(
             x=alt.X('sum(CupsSold):Q', stack='zero'),
             y=alt.Y('HourOfDay:N'),
             detail='DrinkName:N',
             text=alt.Text('sum(CupsSold):Q', format='.0f')
         )
+        
+        METRIC_ERROR = """
+            Wild MISSINGNO Appeared!\n
+            No Data for {} on {}\n
+            ({})
+            """
 
-        st.altair_chart(bar_chart4 + text4, use_container_width=True)
+        INSIGHT_TIP_1 = """
+            SAVING INSIGHT!\n
+            Try to reduce overhead (staff hours) during prolonged quieter periods for huge savings\n
+            Consider cutting back on products with less sales and smaller margins
+            """
 
+        # if no data returned for store and day then show missingno (missing number) error
+        if hour_cups_data:
+            st.altair_chart(bar_chart4 + text4, use_container_width=True)
+            with st.expander("GET YOUR INSIGHTS"):
+                insightCol1, insightCol2, insightCol3 = st.columns([1,5,1])
+                insightCol2.success(INSIGHT_TIP_1)
+                insightCol1.image("imgs/insight.png", width=140)
+                #print(store_selector)
+                # if london then join
+                #insightCol3.image(f"imgs/coffee-shop-light-{}.png", width=140)
+        else:
+            altairChartCol1, altairChartCol2 = st.columns([2,2])
+            try:
+                altairChartCol2.image("imgs/Missingno.png")
+            except FileNotFoundError:
+                pass
+            altairChartCol1.error(METRIC_ERROR.format(store_selector, current_day, "no selected or previous day available"))
+            st.write("##")
+            st.sidebar.info("Cause... Missing Numbers... Get it...")
+
+        st.write("##")
         st.write("##")
         st.write("---")
 
 
+        
+
+
+
+
+# DO INDIVIDUAL ITEM VERSION OF ABOVE HERE!
 
 
 
