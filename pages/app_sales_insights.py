@@ -179,8 +179,10 @@ def run():
             SAVING INSIGHT!\n
             Try to reduce overhead (staff hours) during prolonged quieter periods for huge savings\n
             Consider cutting back on products with less sales and smaller margins\n
-            Worst Performer = {worst_performer} - Consider offers at this time + less staff\n
-            Best Performer = {best_performer} - Ensure staff numbers with strong workers at this time to maximise sales
+            ###### Worst Performing Hour:\n
+            {worst_performer} - Consider offers at this time + less staff\n
+            ###### Best Performing Hour:\n
+            {best_performer} - Ensure staff numbers with strong workers at this time to maximise sales
             """
 
         # if no data returned for store and day then show missingno (missing number) error
