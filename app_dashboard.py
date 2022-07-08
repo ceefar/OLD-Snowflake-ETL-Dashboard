@@ -103,9 +103,9 @@ def run():
 
     # HEADER section
     topcol1, topcol2 = st.columns([1,5])
-    topcol2.markdown("## Your Cafe App Dashboard")
+    topcol2.markdown("# Your Dashboard")
     try:
-        topcol1.image("imgs/cafe_sign.png")
+        topcol1.image("imgs/cafe_sign.png", width=120)
     except:
         st.write("")
     st.write("##")
