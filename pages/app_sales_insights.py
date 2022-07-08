@@ -45,11 +45,17 @@ def run():
         stores_list = ['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho']
         store_selector = st.selectbox("Choose The Store", options=stores_list, index=0)        
 
-        current_day=db.get_basic_dates("first")
-        cups_by_hour_query = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
-                            i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id)\
-                            WHERE store = '{store_selector}' AND DATE(d.timestamp) = '{current_day}' GROUP BY d.timestamp, i.item_name"
-        hour_cups_data = run_query(cups_by_hour_query)
+        # PORTFOLIO 
+        # ADD FUCKING COMMENTS && EXPANDER && PORTFOLIO MODE CHECKBOX TO SIDEBAR 
+        with st.expander("Complex 'Join/Group By' SQL Query (converted from original complex MySQL Query)"):       
+            with st.echo():
+                # note - data hosted on redshift, moved to s3 bucket, then transferred to snowflake warehouse
+                # write comments here pls
+                current_day=db.get_basic_dates("first")
+                cups_by_hour_query = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
+                                    i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id)\
+                                    WHERE store = '{store_selector}' AND DATE(d.timestamp) = '{current_day}' GROUP BY d.timestamp, i.item_name"
+                hour_cups_data = run_query(cups_by_hour_query)
 
         st.write("##")
         just_names_list = []

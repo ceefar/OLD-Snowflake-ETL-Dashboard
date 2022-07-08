@@ -123,7 +123,8 @@ def run():
         if dev_mode:
             with st.expander("Dynamic User Created SQL Queries (Dictionary Switch, Map, Join)"):
                 with st.echo():
-                    # note query functions would be in a separate module, left here to show functionality through portfolio/dev mode
+                    # note 1 - data hosted on redshift, moved to s3 bucket, then transferred to snowflake warehouse
+                    # note 2 - query functions would be in a separate module, left here to show functionality through portfolio/dev mode
                     with topMetricSelectCol2:
                         selected_stores = st.multiselect(label='What Stores Would You Like Info On?', default=['All'],
                                     options=['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho', 'All', 'Only London', 'Only Outside London'])
