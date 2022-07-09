@@ -252,6 +252,28 @@ def run():
                 # size_selector_1 = st.selectbox(label=f"Choose A Size For {item_selector_1}", key="size_selector_1", options=["Regular","Large"], index=0)
                 multi_size_selector_1 = st.multiselect(label=f"Choose A Size For {item_selector_1}", key="multi_size_select_1", options=["Regular","Large"], default="Regular")
             
+
+                # PORTFOLIO 
+                # split flavour selector dynamically if multi select, requires bracket notation for AND / OR statement
+                if len(multi_flav_selector_1) == 1:
+                    final_flav_select_1 = f"i.item_flavour='{multi_flav_selector_1[0]}'"
+                elif len(multi_flav_selector_1) > 1:
+                    final_flav_select_1 = " OR i.item_flavour=".join(list(map(lambda x: f"'{x}'", multi_flav_selector_1)))
+                    final_flav_select_1 = "(i.item_flavour=" + final_flav_select_1 + ")"
+                elif len(multi_flav_selector_1) == 0:
+                    final_flav_select_1 = f"i.item_flavour='{final_item_flavours_list[0]}'"
+                    itemInfoCol.error(f"Flavour = {final_item_flavours_list[0]} >")
+
+                # split size selector if multi select, only ever Regular or Large so easier to do
+                if len(multi_size_selector_1) == 1:
+                    final_size_select_1 = f"i.item_size='{multi_size_selector_1[0]}'"
+                elif len(multi_size_selector_1) == 0:
+                    final_size_select_1 = "i.item_size='Regular'"
+                    itemInfoCol.error(f"Size defaults to Regular >")
+                else:
+                    final_size_select_1 = f"(i.item_size='{multi_size_selector_1[0]}' OR i.item_size = '{multi_size_selector_1[1]}')"
+
+
             # right col (item 2)
             with item2Col:
                 item_flavours_2 = run_query(f"SELECT DISTINCT i.item_flavour FROM redshift_customeritems i INNER JOIN redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE d.store = '{store_selector_2}' AND i.item_name = '{item_selector_2}';")
@@ -261,6 +283,27 @@ def run():
                 multi_flav_selector_2 = st.multiselect(label=f"Choose A Flavour For {item_selector_2}", key="multi_flav_select_2", options=final_item_flavours_list_2, default=final_item_flavours_list_2[0])
                 # size_selector_2 = st.selectbox(label=f"Choose A Size For {item_selector_2}", key="size_selector_2", options=["Regular","Large"], index=0)
                 multi_size_selector_2 = st.multiselect(label=f"Choose A Size For {item_selector_2}", key="multi_size_select_2", options=["Regular","Large"], default="Regular")
+
+
+                # PORTFOLIO 
+                # split flavour selector dynamically if multi select, requires bracket notation for AND / OR statement
+                if len(multi_flav_selector_2) == 1:
+                    final_flav_select_2 = f"i.item_flavour='{multi_flav_selector_2[0]}'"
+                elif len(multi_flav_selector_2) > 1:
+                    final_flav_select_2 = " OR i.item_flavour=".join(list(map(lambda x: f"'{x}'", multi_flav_selector_2)))
+                    final_flav_select_2 = "(i.item_flavour=" + final_flav_select_2 + ")"
+                elif len(multi_flav_selector_2) == 0:
+                    final_flav_select_2 = f"i.item_flavour='{final_item_flavours_list_2[0]}'"
+                    itemInfoCol.error(f"< Flavour = {final_item_flavours_list_2[0]}")
+
+                # split size selector if multi select, only ever Regular or Large so easier to do
+                if len(multi_size_selector_2) == 1:
+                    final_size_select_2 = f"i.item_size='{multi_size_selector_2[0]}'"
+                elif len(multi_size_selector_2) == 0:
+                    final_size_select_2 = "i.item_size='Regular'"
+                    itemInfoCol.error(f"< Size defaults to Regular")
+                else:
+                    final_size_select_2 = f"(i.item_size='{multi_size_selector_2[0]}' OR i.item_size = '{multi_size_selector_2[1]}')"
 
                
                
@@ -277,42 +320,82 @@ def run():
         st.write("##")
 
 
+        # CRITICAL
+        # OBVS SPLITTING THE QUERY FOR MULTI SELECT
+        # & 
+        # IF NONE (may have to rip the whole part of the query but lets see)
+
+
+
         # MAKE FUNCTION AND REUSE THE QUERY FFS
+
+        # left query (select 1)
         cups_by_hour_query_2 = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
-                            i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id)\
+                            i.item_name FROM redshift_customeritems i INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id)\
                             WHERE store = '{store_selector_2}' AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_1}' GROUP BY d.timestamp, i.item_name"
         hour_cups_data_2 = run_query(cups_by_hour_query_2)
 
+        cups_by_hour_query_2_adv = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
+                                    CONCAT(i.item_name, i.item_size, i.item_flavour) AS item FROM redshift_customeritems i\
+                                    INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id) WHERE store = '{store_selector_2}'\
+                                    AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_1}' AND {final_size_select_1}\
+                                    AND {final_flav_select_1} GROUP BY d.timestamp, item"
+        hour_cups_data_2_adv = run_query(cups_by_hour_query_2_adv)                                   
+
+        # right query (select 2)
         cups_by_hour_query_3 = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
-                            i.item_name FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id)\
+                            i.item_name FROM redshift_customeritems i INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id)\
                             WHERE store = '{store_selector_2}' AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_2}' GROUP BY d.timestamp, i.item_name"
         hour_cups_data_3 = run_query(cups_by_hour_query_3)
 
+        cups_by_hour_query_3_adv = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
+                            CONCAT(i.item_name, i.item_size, i.item_flavour) AS item FROM redshift_customeritems i\
+                            INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id) WHERE store = '{store_selector_2}'\
+                            AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_2}' AND {final_size_select_2}\
+                            AND {final_flav_select_2} GROUP BY d.timestamp, item"
+        hour_cups_data_3_adv = run_query(cups_by_hour_query_3_adv)   
 
-        # WHAT WE WANT HERE IS ADVANCED MODE FOR SELECTING EVEN MORE DETAIL
-        # AND PROPER COMPARISON OF 2 ITEMS
+
+        #print(hour_cups_data_2_adv) 
+        #print(hour_cups_data_3_adv)
 
         st.write("##")
 
-        # CREATE AND PRINT THE ALTAIR CHART
+        # create and print an altair chart
 
         # MAKE WHOLE THING A FUNCTION (FUNCTION OF FUNCTIONS TBF - BREAK UP AT RELEVANT POINTS) AND CAN REUSE IT TOO! 
 
         just_names_list_2 = []
         just_hour_list_2 = []
         just_cupcount_list_2 = []
-        for cups_data in hour_cups_data_2:
-            just_cupcount_list_2.append(cups_data[0])
-            just_hour_list_2.append(cups_data[1])
-            just_names_list_2.append(cups_data[2])
+
+        # if advanced mode use the more in depth query, else use the simple one (could merge if statement/for loop section here with below btw)
+        if advanced_options_1:
+            for cups_data in hour_cups_data_2_adv:
+                just_cupcount_list_2.append(cups_data[0])
+                just_hour_list_2.append(cups_data[1])
+                just_names_list_2.append(cups_data[2])
+        else:
+            for cups_data in hour_cups_data_2:
+                just_cupcount_list_2.append(cups_data[0])
+                just_hour_list_2.append(cups_data[1])
+                just_names_list_2.append(cups_data[2])
         
         just_names_list_3 = []
         just_hour_list_3 = []
         just_cupcount_list_3 = []
-        for cups_data in hour_cups_data_3:
-            just_cupcount_list_3.append(cups_data[0])
-            just_hour_list_3.append(cups_data[1])
-            just_names_list_3.append(cups_data[2])
+
+        # if advanced mode use the more in depth query, else use the simple one
+        if advanced_options_1:
+            for cups_data in hour_cups_data_3_adv:
+                just_cupcount_list_3.append(cups_data[0])
+                just_hour_list_3.append(cups_data[1])
+                just_names_list_3.append(cups_data[2])
+        else:
+            for cups_data in hour_cups_data_3:
+                just_cupcount_list_3.append(cups_data[0])
+                just_hour_list_3.append(cups_data[1])
+                just_names_list_3.append(cups_data[2])
 
         just_names_list_2.extend(just_names_list_3)
         just_hour_list_2.extend(just_hour_list_3)
