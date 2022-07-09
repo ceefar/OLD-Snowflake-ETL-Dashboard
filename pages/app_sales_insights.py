@@ -31,7 +31,14 @@ def run_query(query):
 # ---- main web app ----
 
 with st.sidebar:
+    st.write("##")
+    st.markdown("#### Portfolio Mode")
+    st.write("To view live code snippets")
     devmode = st.checkbox("Portfolio Mode")
+    st.write("##")
+    st.markdown("#### Advanced Mode")
+    st.write("For more advanced query options")
+    advanced_options_1 = st.checkbox("Advanced Mode") 
 
 def run():
 
@@ -149,11 +156,12 @@ def run():
                     above_avg_hourcups[hour] = cups
 
         # RN JUST MOVE TO ADVANCED MODE!
+        # PLS DO 1 ACTION LATER!
 
         # end insights calc
 
         
-        METRIC_ERROR = """
+        METRIC_ERROR_MSG = """
             Wild MISSINGNO Appeared!\n
             No Data for {} on {}\n
             ({})
@@ -189,21 +197,13 @@ def run():
                 altairChartCol2.image("imgs/Missingno.png")
             except FileNotFoundError:
                 pass
-            altairChartCol1.error(METRIC_ERROR.format(store_selector, current_day, "no selected or previous day available"))
+            altairChartCol1.error(METRIC_ERROR_MSG.format(store_selector, current_day, "no selected or previous day available"))
             st.write("##")
             st.sidebar.info("Cause... Missing Numbers... Get it...")
 
         st.write("##")
         st.write("##")
         st.write("---")
-
-
-
-
-
-
-
-
 
 
 
@@ -225,13 +225,57 @@ def run():
         final_main_item_list = []
         for item in get_main_item:
             final_main_item_list.append(item[0])
-    
+
         # select any item from the store for comparison
-        item1Col, _, item2Col = st.columns([3,1,3])
+        item1Col, itemInfoCol, item2Col = st.columns([2,1,2])
         with item1Col:
             item_selector_1 = st.selectbox(label=f"Choose An Item From Store {store_selector_2}", key="item_selector_1", options=final_main_item_list, index=0) 
         with item2Col:
             item_selector_2 = st.selectbox(label=f"Choose An Item From Store {store_selector_2}", key="item_selector_2", options=final_main_item_list, index=1)
+        with itemInfoCol:
+            st.write("##")
+            if advanced_options_1:
+                st.info("Advanced Mode : ON")
+            else:
+                st.warning("Try Advanced Mode!")
+
+         # ---- new [testing] - advanced mode ----
+
+        if advanced_options_1:
+            # left col (item 1)
+            with item1Col:
+                item_flavours_1 = run_query(f"SELECT DISTINCT i.item_flavour FROM redshift_customeritems i INNER JOIN redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE d.store = '{store_selector_2}' AND i.item_name = '{item_selector_1}';")
+                final_item_flavours_list = []
+                dont_print_2 = [final_item_flavours_list.append(flavour[0]) for flavour in item_flavours_1]
+                # flav_selector_1 = st.selectbox(label=f"Choose A Flavour For {item_selector_1}", key="flav_selector_1", options=final_item_flavours_list, index=0)  
+                multi_flav_selector_1 = st.multiselect(label=f"Choose A Flavour For {item_selector_1}", key="multi_flav_select_1", options=final_item_flavours_list, default=final_item_flavours_list[0])
+                # size_selector_1 = st.selectbox(label=f"Choose A Size For {item_selector_1}", key="size_selector_1", options=["Regular","Large"], index=0)
+                multi_size_selector_1 = st.multiselect(label=f"Choose A Size For {item_selector_1}", key="multi_size_select_1", options=["Regular","Large"], default="Regular")
+            
+            # right col (item 2)
+            with item2Col:
+                item_flavours_2 = run_query(f"SELECT DISTINCT i.item_flavour FROM redshift_customeritems i INNER JOIN redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE d.store = '{store_selector_2}' AND i.item_name = '{item_selector_2}';")
+                final_item_flavours_list_2 = []
+                dont_print_3 = [final_item_flavours_list_2.append(flavour[0]) for flavour in item_flavours_2]
+                # flav_selector_2 = st.selectbox(label=f"Choose A Flavour For {item_selector_2}", key="flav_selector_2", options=final_item_flavours_list, index=0)  
+                multi_flav_selector_2 = st.multiselect(label=f"Choose A Flavour For {item_selector_2}", key="multi_flav_select_2", options=final_item_flavours_list_2, default=final_item_flavours_list_2[0])
+                # size_selector_2 = st.selectbox(label=f"Choose A Size For {item_selector_2}", key="size_selector_2", options=["Regular","Large"], index=0)
+                multi_size_selector_2 = st.multiselect(label=f"Choose A Size For {item_selector_2}", key="multi_size_select_2", options=["Regular","Large"], default="Regular")
+
+               
+               
+        # get flavour and size for the given main item
+        # display side by side in columns
+        # make the query extension and send the query
+        # display the shit back
+        # try between 2 dates for advanced mode
+        # (legit could go up to 4 yanno?!) - but not rn
+        # add echo
+        # move on
+
+       
+        st.write("##")
+
 
         # MAKE FUNCTION AND REUSE THE QUERY FFS
         cups_by_hour_query_2 = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
@@ -244,8 +288,6 @@ def run():
                             WHERE store = '{store_selector_2}' AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_2}' GROUP BY d.timestamp, i.item_name"
         hour_cups_data_3 = run_query(cups_by_hour_query_3)
 
-        #print(hour_cups_data_2)
-        #print(hour_cups_data_3)
 
         # WHAT WE WANT HERE IS ADVANCED MODE FOR SELECTING EVEN MORE DETAIL
         # AND PROPER COMPARISON OF 2 ITEMS
