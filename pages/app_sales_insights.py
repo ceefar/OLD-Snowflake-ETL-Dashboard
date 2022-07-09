@@ -112,59 +112,43 @@ def run():
         # BIG N0TE!
         #   - 100 need try except incase hour data is missing or all data is missing btw
  
-        # sum_9 = sum(source4['HourOfDay'] == 9)
-        # details = source4.apply(lambda x : True if x['HourOfDay'] == 9 else False, axis = 1)
-        # temptemp = len(details[details == True].index)
-        # print(source4.iloc[[18]])
 
         # FIXME 
         # TODO 
         # PORTFOLIO - PUT THIS SHIT IN ECHO, MANS IS A GOATPANDA NOW... jesus i need to sleep XD
-        # get sum of cupsSold column based on condition (HourOfDay == x)
-        sum9cups = source4.loc[source4['HourOfDay'] == 9, 'CupsSold'].sum()
-        sum10cups = source4.loc[source4['HourOfDay'] == 10, 'CupsSold'].sum()
-        sum11cups = source4.loc[source4['HourOfDay'] == 11, 'CupsSold'].sum()
-        sum12cups = source4.loc[source4['HourOfDay'] == 12, 'CupsSold'].sum()
-
-        # get unique values in HourOfDay column to loop (returns array object so convert to list)
-        # note returned list is not sorted (doesn't really make a difference but meh)
-        # uniqueCols = source4['HourOfDay'].unique()
-        # print(type(uniqueCols)) # -> numpy.ndarray
-        # uniqueCols = list(uniqueCols)
-        
+        # get unique values in HourOfDay column to loop (returns array object so convert to list), then sort/order it
         uniqueCols = sorted(list(source4['HourOfDay'].unique()))
 
-        #print(f"{sum9cups = }")
-        #print(f"{sum10cups = }")
-        #print(f"{sum11cups = }")
-        #print(f"{sum12cups = }")
-        #print(f"{uniqueCols = }")
-
-        randolist = []
         results_dict = {}
+        # get sum of cupsSold column based on condition (HourOfDay == x), added to dictionary with key = hour, value = sum of cups sold for hour
         for value in uniqueCols:
             cupForHour = source4.loc[source4['HourOfDay'] == value, 'CupsSold'].sum()
             results_dict[value] = cupForHour
 
-        dont_print_2 = [randolist.append(f"{value} = {source4.loc[source4['HourOfDay'] == value, 'CupsSold'].sum()}") for value in uniqueCols]
-        #print(f"{randolist = }")
+        average_hourcups = sum(results_dict.values()) / len(results_dict.values())
 
-        #print(f"{results_dict = }")
+        # create a new dictionary from hour/cups dictionary but sorted
+        sort_by_value = dict(sorted(results_dict.items(), key=lambda x: x[1]))   
+        # create a list of formatted strings with times and cups sold including am or pm based on the time
+        sort_by_value_formatted_list = list(map(lambda x: (f"{x[0]}pm [{x[1]} cups sold]") if x[0] > 11 else (f"{x[0]}am [{x[1]} cups sold]"), sort_by_value.items()))
 
-        sort_by_value = dict(sorted(results_dict.items(), key=lambda x: x[1])) 
-        #print(f"{sort_by_value = }")       
+        # list the keys (times, ordered) only, slice the first and last elements in the array (list) [start:stop:step]
+        worst_time, best_time = list(sort_by_value.keys())[::len(sort_by_value.keys())-1]
+        worst_performer, best_performer = sort_by_value_formatted_list[::len(sort_by_value_formatted_list)-1]
 
-        sort_by_value_list = list(map(lambda x: (f"{x[1]} items sold at {x[0]}pm") if x[0] > 11 else (f"{x[1]} items sold at {x[0]}am"), sort_by_value.items()))
+        # TO ADD HERE
+        # print(f"{average_hourcups = }") # HOURS UNDER THIS TIME COULD POSSIBLY BENEFIT FROM AN OFFER, HOURS ABOVE IS STAFF
+        # AVG SPECIFICS
+        # GRANULAR TO ACTUAL PRODUCTS [SKIPPING FOR NOW] 
+        # HOW MUCH IT OVERPERFORMED BY IG [SKIPPING FOR NOW]
+        # ECHO & PORTFOLIO MODE
 
-        worst_performer = sort_by_value_list[0]
-        best_performer = sort_by_value_list[-1]
+        above_avg_hourcups = {}
+        for hour, cups in results_dict.items():
+                if cups >= average_hourcups:
+                    above_avg_hourcups[hour] = cups
 
-        #print(sort_by_value_list)
-        #print(f"{worst_performer = }") 
-        #print(f"{best_performer = }") 
-
-
-        #print("- - - ")
+        # RN JUST MOVE TO ADVANCED MODE!
 
         # end insights calc
 
@@ -176,13 +160,15 @@ def run():
             """
 
         INSIGHT_TIP_1 = f"""
-            SAVING INSIGHT!\n
-            Try to reduce overhead (staff hours) during prolonged quieter periods for huge savings\n
-            Consider cutting back on products with less sales and smaller margins\n
-            ###### Worst Performing Hour:\n
-            {worst_performer} - Consider offers at this time + less staff\n
-            ###### Best Performing Hour:\n
-            {best_performer} - Ensure staff numbers with strong workers at this time to maximise sales
+            ###### Store Insights\n
+            Your personal insights dynamically created from the data you've selected\n
+            ###### Worst Performing Hour : {worst_performer}\n
+            At {worst_time}{f"{'pm' if worst_time > 11 else 'am'}"} consider offers + less staff\n
+            ###### Best Performing Hour: {best_performer}\n
+            At {best_time}{f"{'pm' if best_time > 11 else 'am'}"} ensure staff numbers with strong workers at this time to maximise sales\n
+            ###### TO DO ASAP...\n
+            Average Sales Per Hour: {average_hourcups:.2f} cups sold\n
+            Hours Above Average Sales: {", ".join(list(map(lambda x : f"{x}pm" if x > 11 else f"{x}am" , list(above_avg_hourcups.keys()))))} 
             """
 
         # if no data returned for store and day then show missingno (missing number) error
@@ -191,10 +177,12 @@ def run():
             with st.expander("Gain Insight"):
                 insightCol1, insightCol2 = st.columns([1,5])
                 insightCol2.success(INSIGHT_TIP_1)
-                insightCol1.image("imgs/insight.png", width=140)
-                #print(store_selector)
-                # if london then join
-                #insightCol1.image(f"imgs/coffee-shop-light-{}.png", width=140)
+                insightCol1.image("imgs/insight.png")  # width=140
+                # formatting for img if its a london store
+                current_store = str(store_selector).lower()
+                if "london" in current_store:
+                    current_store = "-".join(current_store)
+                insightCol1.image(f"imgs/cshop-small-{current_store}.png") # width=140
         else:
             altairChartCol1, altairChartCol2 = st.columns([2,2])
             try:
