@@ -1,5 +1,16 @@
 # app_dashboard.py
-# manually adheres to pep8 as best possible (no linter)
+
+# ---- notes ----
+
+# 1. manually adheres to pep8 as best possible, no linter used as trying to learn pep8 styling as much as possible as a jnr dev (syling is important mkay)
+# 1b. but kinda rip pep8 because parts are messy (e.g. excessively long lines) but is entirely due to portfolio/dev mode display needs 
+# 2. as per 1b, there is some repeated code but entirely due to porfolio + the way echo works (method which runs & displays live code on the web app @ the same time)
+# 3. due to weird cffi module issues must be built with python version 3.7 (not 3.9 where it was developed), important for pushing to streamlit cloud for web app
+# 4. entirely done by me for my group project, streamlit was not included in any of our lessons I just think its a great too and works perf with snowflake
+#       - others will be using grafana or metabase, though clean doesn't allow for dynamic user selections, multipage dashboard web app
+#       - i feel this not only shows my drive to go above and beyond to wow the end user, but also my ability to independently learn new frameworks   
+# 5. comments are excessive for portfolio mode, i am a big comment enjoyer but normally would not comment so extensively, particularly where code is self-referencing 
+
 
 # ---- imports ----
 
