@@ -1,5 +1,17 @@
 # app_sales_insights.py
 
+# ---- notes ----
+
+# 1. manually adheres to pep8 as best possible, no linter used as trying to learn pep8 styling as much as possible as a jnr dev (syling is important mkay)
+# 1b. but kinda rip pep8 because parts are messy (e.g. excessively long lines) but is entirely due to portfolio/dev mode display needs 
+# 2. as per 1b, there is some repeated code but entirely due to porfolio + the way echo works (method which runs & displays live code on the web app @ the same time)
+# 3. due to weird cffi module issues must be built with python version 3.7 (not 3.9 where it was developed), important for pushing to streamlit cloud for web app
+# 4. entirely done by me for my group project, streamlit was not included in any of our lessons I just think its a great too and works perf with snowflake
+#       - others will be using grafana or metabase, though clean doesn't allow for dynamic user selections, multipage dashboard web app
+#       - i feel this not only shows my drive to go above and beyond to wow the end user, but also my ability to independently learn new frameworks   
+# 5. comments are excessive for portfolio mode, i am a big comment enjoyer but normally would not comment so extensively, particularly where code is self-referencing 
+
+
 # ---- imports ----
 
 # for web app 
@@ -39,6 +51,7 @@ with st.sidebar:
     st.markdown("#### Advanced Mode")
     st.write("For more advanced query options")
     advanced_options_1 = st.checkbox("Advanced Mode") 
+
 
 def run():
 
@@ -242,7 +255,7 @@ def run():
         with itemInfoCol:
             st.write("##")
             if advanced_options_1:
-                st.info("Advanced Mode : ON")
+                st.info("Advanced Mode : On")
             else:
                 st.warning("Try Advanced Mode!")
 
@@ -253,7 +266,7 @@ def run():
         st.write("##")
 
         if advanced_options_1:
-            # left col (item 1)
+            # left (item 1) col
             with item1Col:
                 item_flavours_1 = run_query(f"SELECT DISTINCT i.item_flavour FROM redshift_customeritems i INNER JOIN redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE d.store = '{store_selector_2}' AND i.item_name = '{item_selector_1}';")
                 final_item_flavours_list = []
@@ -264,46 +277,95 @@ def run():
                 multi_size_selector_1 = st.multiselect(label=f"Choose A Size For {item_selector_1}", key="multi_size_select_1", options=["Regular","Large"], default="Regular")
             
                 if not devmode:
+
+                    flavour_1_is_null = False
+
                     # split flavour selector dynamically if multi select, requires bracket notation for AND / OR statement
                     if len(multi_flav_selector_1) == 1:
-                        final_flav_select_1 = f"i.item_flavour='{multi_flav_selector_1[0]}'"
+                        if multi_flav_selector_1[0] is None:
+                            final_flav_select_1 = f"i.item_flavour is NULL"
+                            flavour_1_is_null = True
+                        else:
+                            final_flav_select_1 = f"i.item_flavour='{multi_flav_selector_1[0]}'"
+                    
+                    # else more than 1 selection, so dynamically join items
                     elif len(multi_flav_selector_1) > 1:
                         final_flav_select_1 = " OR i.item_flavour=".join(list(map(lambda x: f"'{x}'", multi_flav_selector_1)))
                         final_flav_select_1 = "(i.item_flavour=" + final_flav_select_1 + ")"
+
+                    # else if no flavour was selected (any valid flavour was removed from the multiselect box by the user) then 2 cases to deal with      
                     elif len(multi_flav_selector_1) == 0:
                         final_flav_select_1 = f"i.item_flavour='{final_item_flavours_list[0]}'"
-                        itemInfoCol.error(f"Flavour = {final_item_flavours_list[0]} >")
+                        if multi_flav_selector_1[0] is None:
+                            final_flav_select_1 = f"i.item_flavour is NULL"
+                        else:                
+                            final_flav_select_1 = f"i.item_flavour='{final_item_flavours_list[0]}'"
+                            itemInfoCol.error(f"< Flavour = {final_item_flavours_list[0]}")
 
                     # split size selector if multi select, only ever Regular or Large so easier to do
                     if len(multi_size_selector_1) == 1:
                         final_size_select_1 = f"i.item_size='{multi_size_selector_1[0]}'"
                     elif len(multi_size_selector_1) == 0:
                         final_size_select_1 = "i.item_size='Regular'"
-                        itemInfoCol.error(f"Size defaults to Regular >")
+                        itemInfoCol.error(f"< Size defaults to Regular")
                     else:
                         final_size_select_1 = f"(i.item_size='{multi_size_selector_1[0]}' OR i.item_size = '{multi_size_selector_1[1]}')"
 
                 
-            # right col (item 2)
+            # right (item 2) col
+            # the advanced select for item 2 runs regardless of devmode here as dev mode only needs to show one case (since they are both the same code)
             with item2Col:
+                 # ---- user select ----
+
+                # get list (well actually tuples) of flavours for the user selected item from the database
                 item_flavours_2 = run_query(f"SELECT DISTINCT i.item_flavour FROM redshift_customeritems i INNER JOIN redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE d.store = '{store_selector_2}' AND i.item_name = '{item_selector_2}';")
                 final_item_flavours_list_2 = []
+                # convert the returned tuples into a list (don't print required as streamlit prints (to web app) list comprehensions that aren't assigned to variables)
                 dont_print_3 = [final_item_flavours_list_2.append(flavour[0]) for flavour in item_flavours_2]
                 # flav_selector_2 = st.selectbox(label=f"Choose A Flavour For {item_selector_2}", key="flav_selector_2", options=final_item_flavours_list, index=0)  
                 multi_flav_selector_2 = st.multiselect(label=f"Choose A Flavour For {item_selector_2}", key="multi_flav_select_2", options=final_item_flavours_list_2, default=final_item_flavours_list_2[0])
                 # size_selector_2 = st.selectbox(label=f"Choose A Size For {item_selector_2}", key="size_selector_2", options=["Regular","Large"], index=0)
                 multi_size_selector_2 = st.multiselect(label=f"Choose A Size For {item_selector_2}", key="multi_size_select_2", options=["Regular","Large"], default="Regular")
 
+                # ---- flavour query creation ----
+
+                # ---- important ----
+                # required boolean flag for slightly altering the sql query (flavour is the only case with Null values so simple boolean flag is fine)
+                # if flavour is Null/None then we need to tweek the initial SELECT to get the correct (unique) item name
+                flavour_2_is_null = False
 
                 # split flavour selector dynamically if multi select, requires bracket notation for AND / OR statement
+                # only required for flavour, as size can only be regular or large
+                # if only 1 flavour then 2 cases to deal with
                 if len(multi_flav_selector_2) == 1:
-                    final_flav_select_2 = f"i.item_flavour='{multi_flav_selector_2[0]}'"
+                    # check if this item has flavours by checking what was returned by the database for this item
+                    if multi_flav_selector_2[0] is None:
+                        # if there is no flavour for this then set the query to validate on NULL values (no = operator, no '')
+                        final_flav_select_2 = f"i.item_flavour is NULL"
+                        # also set null flavour flag to True so that final sql can be altered to output valid string (i.item_name, i.item_size, i.item_flavour) 
+                        flavour_2_is_null = True
+                    else:
+                        # else just 1 valid flavour was selected so create standard query
+                        final_flav_select_2 = f"i.item_flavour='{multi_flav_selector_2[0]}'"
+
+                # else if more than 1 flavour was selected then we must dynamically join them together so the query include OR statements
                 elif len(multi_flav_selector_2) > 1:
                     final_flav_select_2 = " OR i.item_flavour=".join(list(map(lambda x: f"'{x}'", multi_flav_selector_2)))
                     final_flav_select_2 = "(i.item_flavour=" + final_flav_select_2 + ")"
+
+                # else if no flavour was selected (any valid flavour was removed from the multiselect box by the user) then 2 cases to deal with  
                 elif len(multi_flav_selector_2) == 0:
-                    final_flav_select_2 = f"i.item_flavour='{final_item_flavours_list_2[0]}'"
-                    itemInfoCol.error(f"Flavour = {final_item_flavours_list_2[0]} >")
+                    # first check the available flavours that were returned by the database for this item, if true user has removed the 'None' flavour option from multiselect
+                    if multi_flav_selector_2[0] is None:
+                        # if there is no flavour then set to validate on NULL
+                        final_flav_select_2 = f"i.item_flavour is NULL"
+                    else:      
+                        # else (if the first flavour select option isn't None) then it means the user removed all from valid flavours from multiselect                
+                        final_flav_select_2 = f"i.item_flavour='{final_item_flavours_list_2[0]}'"
+                        # so add the 'default', aka first item in the flavours list, to the query and inform the user of what has happened
+                        itemInfoCol.error(f"Flavour = {final_item_flavours_list_2[0]} >")
+
+                 # ---- size query creation ----
 
                 # split size selector if multi select, only ever Regular or Large so easier to do
                 if len(multi_size_selector_2) == 1:
@@ -314,21 +376,50 @@ def run():
                 else:
                     final_size_select_2 = f"(i.item_size='{multi_size_selector_2[0]}' OR i.item_size = '{multi_size_selector_2[1]}')"
 
-            # FIXME 
-            # TODO - BETTER DISPLAY (as in add ur own explanation text for each 3 types of the display below)
-            # PORTFOLIO 
             if devmode:
-                with st.expander("Complex Dynamic User Input Based Query Creation"):
+                with st.expander("Initial Complex & Complicated Dynamic User Input Based SQL Query Creation"):
                     with st.echo():
+
+                        # ---- flavour query creation ----
+
+                        # ---- important ----
+                        # required boolean flag for slightly altering the sql query (flavour is the only case with Null values so simple boolean flag is fine)
+                        # if flavour is Null/None then we need to tweek the initial SELECT to get the correct (unique) item name
+                        flavour_1_is_null = False
+
                         # split flavour selector dynamically if multi select, requires bracket notation for AND / OR statement
+                        # only required for flavour, as size can only be regular or large
+                        # if only 1 flavour then 2 cases to deal with
                         if len(multi_flav_selector_1) == 1:
-                            final_flav_select_1 = f"i.item_flavour='{multi_flav_selector_1[0]}'"
+                            # check if this item has flavours by checking what was returned by the database for this item
+                            if multi_flav_selector_1[0] is None:
+                                # if there is no flavour for this then set the query to validate on NULL values (no = operator, no '')
+                                final_flav_select_1 = f"i.item_flavour is NULL"
+                                # also set null flavour flag to True so that final sql can be altered to output valid string (i.item_name, i.item_size, i.item_flavour) 
+                                flavour_1_is_null = True
+                            else:
+                                # else just 1 valid flavour was selected so create standard query
+                                final_flav_select_1 = f"i.item_flavour='{multi_flav_selector_1[0]}'"
+
+                        # else if more than 1 flavour was selected then we must dynamically join them together so the query include OR statements
                         elif len(multi_flav_selector_1) > 1:
                             final_flav_select_1 = " OR i.item_flavour=".join(list(map(lambda x: f"'{x}'", multi_flav_selector_1)))
                             final_flav_select_1 = "(i.item_flavour=" + final_flav_select_1 + ")"
+
+                        # else if no flavour was selected (any valid flavour was removed from the multiselect box by the user) then 2 cases to deal with      
                         elif len(multi_flav_selector_1) == 0:
                             final_flav_select_1 = f"i.item_flavour='{final_item_flavours_list[0]}'"
-                            itemInfoCol.error(f"< Flavour = {final_item_flavours_list[0]}")
+                            # first check the available flavours that were returned by the database for this item, if true user has removed the 'None' flavour option from multiselect
+                            if multi_flav_selector_1[0] is None:
+                                # if there is no flavour then set to validate on NULL
+                                final_flav_select_1 = f"i.item_flavour is NULL"
+                            else:      
+                                # else (if the first flavour select option isn't None) then it means the user removed all from valid flavours from multiselect                
+                                final_flav_select_1 = f"i.item_flavour='{final_item_flavours_list[0]}'"
+                                # so add the 'default', aka first item in the flavours list, to the query and inform the user of what has happened
+                                itemInfoCol.error(f"< Flavour = {final_item_flavours_list[0]}")
+
+                        # ---- size query creation ----
 
                         # split size selector if multi select, only ever Regular or Large so easier to do
                         if len(multi_size_selector_1) == 1:
@@ -341,30 +432,41 @@ def run():
 
         else:
 
-            # IF **NOT** ADVANCED MODE (SO IS THE SIMPLE QUERY!)
-
+            # if NOT advanced mode, but IS dev mode
+            # aka needs echo/code print, but NO complex (flavour + size) query 
             if devmode:
-                with st.expander("Simple Dynamic User Input Based Query Creation"):
-                    # note below queries on one line for dev mode view due to code block 
+                with st.expander("Complex Dynamic User Input Based Query Creation"):
+                    # note the below queries are on one line for dev mode view due to code block printing excess spaces for \ new line formatting
                     st.markdown("###### The Live Executed Code")
                     with st.echo():
-                        
-                        # left query (select 1)
+                        # complex (multi-step) but not complicated (significantly dynamic logic) queries as they require no flavour or size info,
+                        # dealt with separately for scalability and readability (as opposed to one query with multiple boolean flags -> not scalable)
+
+                        # ---- The Query Breakdown ----
+                        # select count of names of each item sold, grouped by each unique item and for each hour of the day (e.g. 20 large mocha @ 9am, 15 large mocha @ 10am...)
+                        # inner joins between customerdata -> essentially raw data that has been cleaned/valdiated
+                        # and customeritems -> customer transactional data that has been normalised to first normal form (all unique records, all single values)
+                        # joined on the transaction id (which is what allows the transactional 'customeritems' table to adhere to 1nf)
+                        # where store, date, and item name are the users selected values
+
+                        # left (item 1) query
                         cups_by_hour_query_2 = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour, i.item_name FROM redshift_customeritems i INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id) WHERE store = '{store_selector_2}' AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_1}' GROUP BY d.timestamp, i.item_name"
                         hour_cups_data_2 = run_query(cups_by_hour_query_2)  
 
-                        # right query (select 2)
+                        # right (item 2) query
                         cups_by_hour_query_3 = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour, i.item_name FROM redshift_customeritems i INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id) WHERE store = '{store_selector_2}' AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_2}' GROUP BY d.timestamp, i.item_name"
                         hour_cups_data_3 = run_query(cups_by_hour_query_3)
 
-                        # check out the code blocks below :D
+                        # scroll right to check out your selections dynamically updating the queries in the live code blocks below :D
                         st.write("##")
-                        st.markdown("###### The Resulting Queries - Code Blocks")
+                        st.markdown("###### The Resulting Dynamic Queries - Code Blocks")
                         st.markdown("Left Query (select 1) - **Scroll >**")
                         st.code(cups_by_hour_query_2, language="sql")
                         st.markdown("Right Query (select 2) - **Scroll >**")
                         st.code(cups_by_hour_query_3, language="sql")
 
+            # else if NOT dev mode (and also NOT advanced mode)
+            # aka NO echo, NO complex (flavour + size) query - so no excess comments or web app (single line) formatting needed
             else:     
                 # left query (select 1)
                 cups_by_hour_query_2 = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
@@ -388,16 +490,30 @@ def run():
         # FIXME 
         # BUG - HUGE BUG THE NONE ISSUE NOW - which is fine tbf as i expected but still 100% need to do - see camden i think
 
+
+
         if advanced_options_1:
+            # needed for assignment error (will be written again but meh)
+            # right (item 2)
+            if flavour_2_is_null == False:
+                flavour_2_concat = ", i.item_flavour"
+            else:
+                flavour_2_concat = ""
+            # left (item 1)
+            if flavour_1_is_null == False:
+                flavour_1_concat = ", i.item_flavour"
+            else:
+                flavour_1_concat = ""
+
             # purely for display in portfolio/dev mode
-            CUPS_BY_HOUR_QUERY_2_ADV_DISPLAY = f"""SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
-                                        CONCAT(i.item_name, i.item_size, i.item_flavour) AS item FROM redshift_customeritems i\
+            CUPS_BY_HOURS_QUERY_2_ADV_DISPLAY = f"""SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
+                                        CONCAT(i.item_name, i.item_size {flavour_1_concat}) AS item FROM redshift_customeritems i\
                                         INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id) WHERE store = '{store_selector_2}'\
                                         AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_1}' AND {final_size_select_1}\
                                         AND {final_flav_select_1} GROUP BY d.timestamp, item"""
             # purely for display in portfolio/dev mode
             CUPS_BY_HOURS_QUERY_3_ADV_DISPLAY = f"""SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
-                        CONCAT(i.item_name, i.item_size, i.item_flavour) AS item FROM redshift_customeritems i\
+                        CONCAT(i.item_name, i.item_size {flavour_2_concat}) AS item FROM redshift_customeritems i\
                         INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id) WHERE store = '{store_selector_2}'\
                         AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_2}' AND {final_size_select_2}\
                         AND {final_flav_select_2} GROUP BY d.timestamp, item"""
@@ -408,48 +524,132 @@ def run():
         if advanced_options_1:
             # rip pep8 -> note long lines due to display for dev mode
             if devmode:
-                with st.expander("The Resulting Dynamic SQL Queries - Left Query"): # RENAME
+                with st.expander("The Final, Live Code Dynamic SQL Queries - Left Query (Item 1)"): # RENAME
+                    st.markdown("##### :nerd_face: Extensively Commented Breakdown of Dynamic Query Creation (Live Code) :nerd_face:")
                     with st.echo():
-                        cups_by_hour_query_2_adv = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour, CONCAT(i.item_name, i.item_size, i.item_flavour) AS item FROM redshift_customeritems i INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id) WHERE store = '{store_selector_2}' AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_1}' AND {final_size_select_1} AND {final_flav_select_1} GROUP BY d.timestamp, item"
+
+                         # complex (multi-step) and complicated (significantly dynamic logic) queries
+                        # as they require flavour and size info, and be null compatible 
+                        # dealt with separately for scalability and readability (as opposed to one query with multiple boolean flags -> not scalable)
+
+                        # ---- The Query Breakdown ----
+                        # select count of names of each unique item sold, with the unique items = concatinated name + size + flavour (if not null)
+                        # if flavour is null remove it from the concat in the select query
+                        # then group each item by unique flavour + name + size 
+                        # and for each hour of the day (e.g. 20 large mocha @ 9am, 15 large mocha @ 10am...)
+                        # inner joins between customerdata -> essentially raw data that has been cleaned/valdiated
+                        # and customeritems -> customer transactional data that has been normalised to first normal form (all unique records, all single values)
+                        # joined on the transaction id (which is the field that allows the transactional 'customeritems' table to adhere to 1nf)
+                        # where store, date, and item name are the users selected values
+
+                        if flavour_1_is_null == False:
+                            # if flag is False, a valid flavour is included in the flavour part of the query (AND i.flavour = "x" OR i.flavour = "y")
+                            # so use it in the SELECT statement for finding unqiue items (unique item = item_name + unique size + unique flavour)
+                            flavour_1_concat = ", i.item_flavour"
+                        else:
+                            # if flag is True, the query has been adjusted for Null values in the flavour part of the query (AND i.flavour is NULL)
+                            # so remove it from the SELECT statement otherwise included NULL will invalidate it entirely (every i.itemname + i.itemsize will = NULL)
+                            flavour_1_concat = ""  
+
+                        # run the query
+                        # scroll right or check out the below "Raw Text" dropdown to see this query before dynamic user inputs are added
+                        cups_by_hour_query_2_adv = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour, CONCAT(i.item_name, i.item_size {flavour_1_concat}) AS item FROM redshift_customeritems i INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id) WHERE store = '{store_selector_2}' AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_1}' AND {final_size_select_1} AND {final_flav_select_1} GROUP BY d.timestamp, item"
                         hour_cups_data_2_adv = run_query(cups_by_hour_query_2_adv) 
-                        st.write(CUPS_BY_HOUR_QUERY_2_ADV_DISPLAY)
+
+                        # light formatting for the display you're looking at right now
+                        st.write("")
+                        st.markdown("##### :heart_eyes: The Resulting Dynamic Query :heart_eyes:")
+                        st.write("Scroll The Code Below To See It In Action >")                        
                         st.code(cups_by_hour_query_2_adv, language="sql")   
 
-                with st.expander("The Resulting Dynamic SQL Queries - Right Query"): # RENAME
-                    with st.echo():                               
-                        cups_by_hour_query_3_adv = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour, CONCAT(i.item_name, i.item_size, i.item_flavour) AS item FROM redshift_customeritems i INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id) WHERE store = '{store_selector_2}' AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_2}' AND {final_size_select_2} AND {final_flav_select_2} GROUP BY d.timestamp, item"
-                        hour_cups_data_3_adv = run_query(cups_by_hour_query_3_adv)
-                        st.write(CUPS_BY_HOURS_QUERY_3_ADV_DISPLAY) 
-                        st.code(cups_by_hour_query_3_adv, language="sql")     
+                with st.expander("Resulting Dynamic Left Query - As Raw Text"):
+                    st.markdown("###### Raw Text Version of Resulting Dynamic Query - No Scroll")
+                    st.write("Change the above options (for the left/1st item) and watch this live update based on your inputs") 
+                    st.write(CUPS_BY_HOURS_QUERY_2_ADV_DISPLAY) 
 
-            # if no dev mode            
+                with st.expander("The Final, Live Code Dynamic SQL Queries - Right Query (Item 2)"): # RENAME
+                    st.markdown("##### :nerd_face: Extensively Commented Breakdown of Dynamic Query Creation (Live Code) :nerd_face:")
+                    with st.echo():
+
+                        # complex (multi-step) and complicated (significantly dynamic logic) queries
+                        # as they require flavour and size info, and be null compatible 
+                        # dealt with separately for scalability and readability (as opposed to one query with multiple boolean flags -> not scalable)
+
+                        # ---- The Query Breakdown ----
+                        # select count of names of each unique item sold, with the unique items = concatinated name + size + flavour (if not null)
+                        # if flavour is null remove it from the concat in the select query
+                        # then group each item by unique flavour + name + size 
+                        # and for each hour of the day (e.g. 20 large mocha @ 9am, 15 large mocha @ 10am...)
+                        # inner joins between customerdata -> essentially raw data that has been cleaned/valdiated
+                        # and customeritems -> customer transactional data that has been normalised to first normal form (all unique records, all single values)
+                        # joined on the transaction id (which is the field that allows the transactional 'customeritems' table to adhere to 1nf)
+                        # where store, date, and item name are the users selected values
+
+                        if flavour_2_is_null == False:
+                            # if flag is False, a valid flavour is included in the flavour part of the query (AND i.flavour = "x" OR i.flavour = "y")
+                            # so use it in the SELECT statement for finding unqiue items (unique item = item_name + unique size + unique flavour)
+                            flavour_2_concat = ", i.item_flavour"
+                        else:
+                            # if flag is True, the query has been adjusted for Null values in the flavour part of the query (AND i.flavour is NULL)
+                            # so remove it from the SELECT statement otherwise included NULL will invalidate it entirely (every i.itemname + i.itemsize will = NULL)
+                            flavour_2_concat = ""                        
+
+                        # run the query
+                        # scroll right or check out the below "Raw Text" dropdown to see this query before dynamic user inputs are added
+                        cups_by_hour_query_3_adv = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour, CONCAT(i.item_name, i.item_size {flavour_2_concat}) AS item FROM redshift_customeritems i INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id) WHERE store = '{store_selector_2}' AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_2}' AND {final_size_select_2} AND {final_flav_select_2} GROUP BY d.timestamp, item"
+                        hour_cups_data_3_adv = run_query(cups_by_hour_query_3_adv)
+
+                        # light formatting for the display you're looking at right now
+                        st.write("")
+                        st.markdown("##### :heart_eyes: The Resulting Dynamic Query :heart_eyes:")
+                        st.write("Scroll The Code Below To See It In Action >")
+                        st.code(cups_by_hour_query_3_adv, language="sql")    
+
+                with st.expander("Resulting Dynamic Right Query - As Raw Text"):
+                    st.markdown("###### Raw Text Version of Resulting Dynamic Query - No Scroll")
+                    st.write("Change the above options (for the right/2nd item) and watch this live update based on your inputs") 
+                    st.write(CUPS_BY_HOURS_QUERY_3_ADV_DISPLAY) 
+
+            # if no dev mode, but complex (flavour + size) query            
             else:
+                # no need for excess comments as no echo
+
+                if flavour_1_is_null == False:
+                    flavour_1_concat = ", i.item_flavour"
+                else:
+                    flavour_1_concat = ""
+
                 cups_by_hour_query_2_adv = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
-                                            CONCAT(i.item_name, i.item_size, i.item_flavour) AS item FROM redshift_customeritems i\
+                                            CONCAT(i.item_name, i.item_size {flavour_1_concat}) AS item FROM redshift_customeritems i\
                                             INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id) WHERE store = '{store_selector_2}'\
                                             AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_1}' AND {final_size_select_1}\
                                             AND {final_flav_select_1} GROUP BY d.timestamp, item"
                 hour_cups_data_2_adv = run_query(cups_by_hour_query_2_adv)                                   
 
+                if flavour_2_is_null == False:
+                    flavour_2_concat = ", i.item_flavour"
+                else:
+                    flavour_2_concat = ""
+                
                 cups_by_hour_query_3_adv = f"SELECT COUNT(i.item_name) AS cupsSold, EXTRACT(HOUR FROM TO_TIMESTAMP(d.timestamp)) AS theHour,\
-                                    CONCAT(i.item_name, i.item_size, i.item_flavour) AS item FROM redshift_customeritems i\
+                                    CONCAT(i.item_name, i.item_size {flavour_2_concat}) AS item FROM redshift_customeritems i\
                                     INNER JOIN redshift_customerdata d ON (i.transaction_id = d.transaction_id) WHERE store = '{store_selector_2}'\
                                     AND DATE(d.timestamp) = '{current_day_2}' AND i.item_name = '{item_selector_2}' AND {final_size_select_2}\
                                     AND {final_flav_select_2} GROUP BY d.timestamp, item"
                 hour_cups_data_3_adv = run_query(cups_by_hour_query_3_adv)   
 
-
         st.write("##")
 
-        # create and print an altair chart
+        # ---- finally create and print the altair chart of the results... phew ----
 
-        # MAKE WHOLE THING A FUNCTION (FUNCTION OF FUNCTIONS TBF - BREAK UP AT RELEVANT POINTS) AND CAN REUSE IT TOO! 
+        # left query (item 1)
 
+        # empty lists used for transforming db data for df
         just_names_list_2 = []
         just_hour_list_2 = []
         just_cupcount_list_2 = []
 
-        # if advanced mode use the more in depth query, else use the simple one (could merge if statement/for loop section here with below btw)
+        # if advanced mode use the advanced (_adv) query, else use the simple one
         if advanced_options_1:
             for cups_data in hour_cups_data_2_adv:
                 just_cupcount_list_2.append(cups_data[0])
@@ -461,11 +661,14 @@ def run():
                 just_hour_list_2.append(cups_data[1])
                 just_names_list_2.append(cups_data[2])
         
+        # right query (item 2)
+
+        # empty lists used for transforming db data for df
         just_names_list_3 = []
         just_hour_list_3 = []
         just_cupcount_list_3 = []
 
-        # if advanced mode use the more in depth query, else use the simple one
+        # if advanced mode use the advanced (_adv) query, else use the simple one
         if advanced_options_1:
             for cups_data in hour_cups_data_3_adv:
                 just_cupcount_list_3.append(cups_data[0])
@@ -477,28 +680,32 @@ def run():
                 just_hour_list_3.append(cups_data[1])
                 just_names_list_3.append(cups_data[2])
 
+        # extended one of the lists with the other for the final dataframe 
         just_names_list_2.extend(just_names_list_3)
         just_hour_list_2.extend(just_hour_list_3)
         just_cupcount_list_2.extend(just_cupcount_list_3)
 
+        # create the dataframe
         source2 = pd.DataFrame({
         "DrinkName": just_names_list_2,
         "CupsSold":  just_cupcount_list_2,
         "HourOfDay": just_hour_list_2
         })
 
-        source3 = pd.DataFrame({
-        "DrinkName": just_names_list_3,
-        "CupsSold":  just_cupcount_list_3,
-        "HourOfDay": just_hour_list_3
-        })
 
+        # FIXME - ASAP!
+        # PORTFOLIO - ADD THIS AND ECHO SOMEWHERE PLSSS!! 
+        # THEN QUICKLY SEE IF CAN FIX THE STRING THING BUT COULD LEAVE FOR NOW TBF
+        # THEN LEGIT DONE ON THIS ONE FOR NOW BOSH
+
+        # setup barchart
         bar_chart2 = alt.Chart(source2).mark_bar().encode(
-            color="DrinkName:N", # x="month(Date):O",
+            color="DrinkName:N",
             x="sum(CupsSold):Q",
             y="HourOfDay:N"
         ).properties(height=300)
 
+        # setup text labels for barchart
         text2 = alt.Chart(source2).mark_text(dx=-10, dy=3, color='white', fontSize=12, fontWeight=600).encode(
             x=alt.X('sum(CupsSold):Q', stack='zero'),
             y=alt.Y('HourOfDay:N'),
@@ -506,6 +713,7 @@ def run():
             text=alt.Text('sum(CupsSold):Q', format='.0f')
         )
 
+        # render the chart
         st.altair_chart(bar_chart2 + text2, use_container_width=True)
 
 
