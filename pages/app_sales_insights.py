@@ -661,6 +661,14 @@ def run():
                 just_hour_list_2.append(cups_data[1])
                 just_names_list_2.append(cups_data[2])
         
+
+        
+        # FIXME - ASAP!
+        # PORTFOLIO - ADD THIS AND ECHO SOMEWHERE PLSSS!! 
+        # THEN QUICKLY SEE IF CAN FIX THE STRING THING BUT COULD LEAVE FOR NOW TBF
+        # THEN LEGIT DONE ON THIS ONE FOR NOW BOSH
+
+
         # right query (item 2)
 
         # empty lists used for transforming db data for df
@@ -693,10 +701,6 @@ def run():
         })
 
 
-        # FIXME - ASAP!
-        # PORTFOLIO - ADD THIS AND ECHO SOMEWHERE PLSSS!! 
-        # THEN QUICKLY SEE IF CAN FIX THE STRING THING BUT COULD LEAVE FOR NOW TBF
-        # THEN LEGIT DONE ON THIS ONE FOR NOW BOSH
 
         # setup barchart
         bar_chart2 = alt.Chart(source2).mark_bar().encode(
@@ -737,31 +741,7 @@ def run():
 
 
 
-############# FOR MENU PRINT ################
-    
-    # new store selector
-    store_selector_4 = st.selectbox(label="Choose The Store", key="store_select_4", options=stores_list, index=0) 
-    
-    # get every valid unique combination of item, size and flavour, returned as tuple for the selected store only
-    get_menu = run_query(f"SELECT DISTINCT i.item_name, i.item_size, i.item_flavour FROM redshift_customeritems i INNER JOIN redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE d.store = '{store_selector_4}'")
-    # query for all below
-    # get_menu = run_query("SELECT DISTINCT item_name, item_size, item_flavour AS unique_items FROM redshift_customeritems")
-    final_menu = []
-    for item in get_menu:
-        final_item = []
-        # remove any None types from the tuple returned from the query
-        dont_print = [final_item.append(subitem) for subitem in item if subitem is not None]
-        # join each element of iterable in to one string with spaces between
-        menu_item = (" ".join(final_item))
-        # format and append all items to a list for user selection
-        menu_item = menu_item.title().strip()
-        final_menu.append(menu_item)
 
-    # select any item from the store for comparison
-    item_selector_1 = st.selectbox(label=f"Choose An Item From Store {store_selector_4}", key="item_selector_1", options=final_menu, index=0) 
-
-    st.write("##")
-    st.write("---")
 
 
 ###############################################
