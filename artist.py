@@ -23,7 +23,7 @@ def draw_dynamic_store_menu(imgname:str, listItems:list, listTitle:str) -> str:
     #  - would love to add in dynamic user inputs in some way but leaving as is for now
     #  - what really should do for listitems is store each listitems length and i, then match up longest list items with shortest 
 
-    # path for image storage
+    # path for the final image
     imgpath = f'imgs/menu_{imgname}'
 
     # base bg dimensions
@@ -138,3 +138,61 @@ def draw_dynamic_store_menu(imgname:str, listItems:list, listTitle:str) -> str:
     # could also add text like "sorry for unavailable items" if any valid boolean flag was raised
 
     return(imgpath)
+
+
+
+def highlight_calendar(weeknumb:int) -> str:
+    """ write me pls ceef """
+
+    # path for the final image
+    imgpath = f'imgs/test_june_{weeknumb}.png'
+
+    # open img object
+    img = Image.open('imgs/Calendar-2022-June.png')
+    # setup base object from original bg img and open it for drawing 
+    imgDraw = ImageDraw.Draw(img)
+
+
+    #FIXME - DO CROP HERE DUHHHHH!
+
+
+    # save the bg before adding rectangle highlight
+    img.save(imgpath)
+
+    # create new draw object with transparency option
+    img1 = ImageDraw.Draw(img, "RGBA")
+
+
+    # VERY TEMP, OBVS DO PROPERLY
+
+    inc = 180
+    w1 = 127
+    w2 = 307
+    w3 = 487
+    w4 = 590
+    
+    if weeknumb == 0:
+        pos0 = [930, 220, 30, w1]
+        img1.rectangle(pos0, fill=(255, 0, 0, 55)) # A, 220, B, 127
+    elif weeknumb == 1:
+        pos1 = [930, 220, 30, w2]
+        img1.rectangle(pos1, fill=(255, 0, 0, 55))
+    elif weeknumb == 2:
+        pos2 = [930, 220+90, 30, 400]
+        img1.rectangle(pos2, fill=(255, 0, 0, 55))
+    elif weeknumb == 3:
+        pos3 = [930, 220+inc, 30, w3]
+        img1.rectangle(pos3, fill=(255, 0, 0, 55))
+    elif weeknumb == 4:
+        pos4 = [930, 220+270, 30, w4]
+        img1.rectangle(pos4, fill=(255, 0, 0, 55))
+ 
+    # draw the rectangle with transparency
+    # img1.rectangle([930, 220+270, 30, w4], fill=(255, 0, 0, 55)) # A, 220, B, 127
+
+    img.save(imgpath)
+    return(imgpath)
+
+
+
+#highlight_calendar(22)
