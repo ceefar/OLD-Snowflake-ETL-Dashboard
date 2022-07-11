@@ -297,11 +297,11 @@ def run():
 
         def store_img_display(grab_store=False, store_to_grab="Chesterfield"):
             """ display stores as saturated img if not in search query, else full colour - uses dict switch with column object as value """
-            store_dict = {"Uppingham":{"Col":storeCol1, "ImgClr":"imgs/coffee-shop-light-uppingham.png", "ImgStr":"imgs/coffee-shop-light-uppingham-saturated.png", "ImgSml":"imgs\cshop-small-uppingham.png"},
-                                        "Longridge":{"Col":storeCol2, "ImgClr":"imgs/coffee-shop-light-longridge.png", "ImgStr":"imgs/coffee-shop-light-longridge-saturated.png", "ImgSml":"imgs\cshop-small-longridge.png"},
-                                        "Chesterfield":{"Col":storeCol3, "ImgClr":"imgs/coffee-shop-light-chesterfield.png", "ImgStr":"imgs/coffee-shop-light-chesterfield-saturated.png", "ImgSml":"imgs\cshop-small-chesterfield.png"},
-                                        "London Camden":{"Col":storeCol4, "ImgClr":"imgs/coffee-shop-light-london-camden.png", "ImgStr":"imgs/coffee-shop-light-london-camden-saturated.png", "ImgSml":"imgs\cshop-small-london-camden.png"},
-                                        "London Soho":{"Col":storeCol5, "ImgClr":"imgs/coffee-shop-light-london-soho.png", "ImgStr":"imgs/coffee-shop-light-london-soho-saturated.png", "ImgSml":"imgs\cshop-small-london-soho.png"},
+            store_dict = {"Uppingham":{"Col":storeCol1, "ImgClr":"imgs/coffee-shop-light-uppingham.png", "ImgStr":"imgs/coffee-shop-light-uppingham-saturated.png", "ImgSml":"imgs/cshop-small-uppingham.png"},
+                                        "Longridge":{"Col":storeCol2, "ImgClr":"imgs/coffee-shop-light-longridge.png", "ImgStr":"imgs/coffee-shop-light-longridge-saturated.png", "ImgSml":"imgs/cshop-small-longridge.png"},
+                                        "Chesterfield":{"Col":storeCol3, "ImgClr":"imgs/coffee-shop-light-chesterfield.png", "ImgStr":"imgs/coffee-shop-light-chesterfield-saturated.png", "ImgSml":"imgs/cshop-small-chesterfield.png"},
+                                        "London Camden":{"Col":storeCol4, "ImgClr":"imgs/coffee-shop-light-london-camden.png", "ImgStr":"imgs/coffee-shop-light-london-camden-saturated.png", "ImgSml":"imgs/cshop-small-london-camden.png"},
+                                        "London Soho":{"Col":storeCol5, "ImgClr":"imgs/coffee-shop-light-london-soho.png", "ImgStr":"imgs/coffee-shop-light-london-soho-saturated.png", "ImgSml":"imgs/cshop-small-london-soho.png"},
                                         }
             if grab_store:
                 # if given parameters its because we just want to quickly grab one image, has less computation so put first in the if statement
@@ -461,6 +461,7 @@ def run():
             # print(actual_first_day[0][0])
             weekBreakdownCol1.markdown(f"#### Week Commencing : {actual_first_day[0][0]}")
 
+            # should cache artist prints btw as will be atleast somewhat computationally expensive
             june_start_weeknumb = 22
             highlight_week = weeknumberselect - june_start_weeknumb
             calendar_highlight = arty.highlight_calendar(highlight_week)
