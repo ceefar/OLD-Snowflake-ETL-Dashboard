@@ -5,6 +5,7 @@
 # 1. manually adheres to pep8 as best possible, no linter used as trying to learn pep8 styling as much as possible as a jnr dev (syling is important mkay)
 # 1b. but kinda rip pep8 because parts are messy (e.g. excessively long lines) but is entirely due to portfolio/dev mode display needs 
 # 2. as per 1b, there is some repeated code but entirely due to porfolio + the way echo works (method which runs & displays live code on the web app @ the same time)
+# 2b. as per 2, would ideally have placed things in cached functions to stop excess calls but again, due to echo/portfolio mode this isn't really possible
 # 3. due to weird cffi module issues must be built with python version 3.7 (not 3.9 where it was developed), important for pushing to streamlit cloud for web app
 # 4. entirely done by me for my group project, streamlit was not included in any of our lessons I just think its a great too and works perf with snowflake
 #       - others will be using grafana or metabase, though clean doesn't allow for dynamic user selections, multipage dashboard web app
@@ -123,10 +124,13 @@ def run():
     st.write("---")
 
 
+    # ---- Daily Snapshot Section ----
+
     # DATE SELECTER container
     with st.container():
 
-        st.markdown("#### Daily Snapshot")
+        st.markdown("### Daily Snapshot")
+        #st.write("##")
         topMetricSelectCol1, topMetricSelectCol2 = st.columns(2)
 
         with topMetricSelectCol1:
@@ -284,32 +288,36 @@ def run():
             except FileNotFoundError:
                 pass
             st.sidebar.info("Cause... Missing Numbers... Get it...")
-
         
         _, storeCol1, storeCol2, storeCol3, storeCol4, storeCol5, _ = st.columns(7)
         st.write("---")
         col1, col2, col3, col4 = st.columns(4)
 
-        def store_img_display():
+        def store_img_display(grab_store=False, store_to_grab="Chesterfield"):
             """ display stores as saturated img if not in search query, else full colour - uses dict switch with column object as value """
-            store_dict = {"Uppingham":{"Col":storeCol1, "ImgClr":"imgs/coffee-shop-light-uppingham.png", "ImgStr":"imgs/coffee-shop-light-uppingham-saturated.png"},
-                          "Longridge":{"Col":storeCol2, "ImgClr":"imgs/coffee-shop-light-longridge.png", "ImgStr":"imgs/coffee-shop-light-longridge-saturated.png"},
-                          "Chesterfield":{"Col":storeCol3, "ImgClr":"imgs/coffee-shop-light-chesterfield.png", "ImgStr":"imgs/coffee-shop-light-chesterfield-saturated.png"},
-                          "London Camden":{"Col":storeCol4, "ImgClr":"imgs/coffee-shop-light-london-camden.png", "ImgStr":"imgs/coffee-shop-light-london-camden-saturated.png"},
-                          "London Soho":{"Col":storeCol5, "ImgClr":"imgs/coffee-shop-light-london-soho.png", "ImgStr":"imgs/coffee-shop-light-london-soho-saturated.png"},
-                        }
-            store_list = ['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho']
-            for store_name in store_list:
-                if store_name in final_stores:
-                    try:
-                        store_dict[store_name]["Col"].image(store_dict[store_name]["ImgClr"])
-                    except FileNotFoundError:
-                        print("")
-                else:
-                    try:
-                        store_dict[store_name]["Col"].image(store_dict[store_name]["ImgStr"])
-                    except FileNotFoundError:
-                        print("")
+            store_dict = {"Uppingham":{"Col":storeCol1, "ImgClr":"imgs/coffee-shop-light-uppingham.png", "ImgStr":"imgs/coffee-shop-light-uppingham-saturated.png", "ImgSml":"imgs\cshop-small-uppingham.png"},
+                                        "Longridge":{"Col":storeCol2, "ImgClr":"imgs/coffee-shop-light-longridge.png", "ImgStr":"imgs/coffee-shop-light-longridge-saturated.png", "ImgSml":"imgs\cshop-small-longridge.png"},
+                                        "Chesterfield":{"Col":storeCol3, "ImgClr":"imgs/coffee-shop-light-chesterfield.png", "ImgStr":"imgs/coffee-shop-light-chesterfield-saturated.png", "ImgSml":"imgs\cshop-small-chesterfield.png"},
+                                        "London Camden":{"Col":storeCol4, "ImgClr":"imgs/coffee-shop-light-london-camden.png", "ImgStr":"imgs/coffee-shop-light-london-camden-saturated.png", "ImgSml":"imgs\cshop-small-london-camden.png"},
+                                        "London Soho":{"Col":storeCol5, "ImgClr":"imgs/coffee-shop-light-london-soho.png", "ImgStr":"imgs/coffee-shop-light-london-soho-saturated.png", "ImgSml":"imgs\cshop-small-london-soho.png"},
+                                        }
+            if grab_store:
+                # if given parameters its because we just want to quickly grab one image, has less computation so put first in the if statement
+                # returns img path
+                return(store_dict[store_to_grab]["ImgSml"])
+            else:
+                store_list = ['Uppingham', 'Longridge', 'Chesterfield', 'London Camden', 'London Soho']
+                for store_name in store_list:
+                    if store_name in final_stores:
+                        try:
+                            store_dict[store_name]["Col"].image(store_dict[store_name]["ImgClr"])
+                        except FileNotFoundError:
+                            print("")
+                    else:
+                        try:
+                            store_dict[store_name]["Col"].image(store_dict[store_name]["ImgStr"])
+                        except FileNotFoundError:
+                            print("")
 
         store_img_display()
 
@@ -326,11 +334,64 @@ def run():
 
 
 
+
+
+    # ---- New Section - Revenue Breakdown ----
+
+    # AITE SO LETS DO REVENUE BETWEEN DATES WITH OPTION FOR WEEK AND MONTH HERE 
+    # - then maybe find some lil revenue specific extras to stick on top idk
+
+    # ok so first its a store selector obvs
+    # then you see all time regardless with a toggle for between dates (on that only for now ig) or for a full month
+    # then below that is a week view and you can then select week by week from here
+    # compare 2 stores might be nice too but could save for sumnt else tbf
+    # then we'll explore more revenue breakdown stuff here too
+
+
+    # DATE SELECTER container
+    with st.container():
+
+        st.markdown("### Store Revenue Breakdown")
+
+        # date select
+        stores_list = ['Chesterfield', 'Uppingham', 'Longridge', 'London Camden', 'London Soho']
+        dashboardRevDate1, dashboardRevDate2 = st.columns(2)
+        with dashboardRevDate1:
+            user_start_date = st.date_input("What Date Would You Like Info On?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate1")  
+        with dashboardRevDate2:
+            user_end_date = st.date_input("What Date Would You Like Info On?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate2")  
+
+
+        #TODO
+        # - function if start date after end date (and else validation) 
+
+        # store select and img print
+        st.write("##")
+        dashboardRevStore1, dashboardRevStore2 = st.columns([1,4])
+        with dashboardRevStore2:
+            store_selector = st.selectbox("Choose The Store", options=stores_list, index=0, key="dashrevstore") 
+        with dashboardRevStore1:
+            try:
+                dashRevStore_img = store_img_display(True, store_selector)
+                st.image(dashRevStore_img)
+            except FileNotFoundError:
+                print("")
+
+        store_alltime_rev = db.get_stores_breakdown_revenue_via_bizi(store_selector)
+        st.write(store_alltime_rev)
+
+
+
+
+
+
+
+
 # driver
 try:
     run()
 except snowflake.connector.errors.ProgrammingError:
-    # testing error handling for app losing connection, rerun connection singleton, initialise connectoin, then run web app
+    # testing error handling for app losing connection, rerun connection singleton, initialise connection, then run web app
     db.init_connection()
     conn = db.init_connection()
     run()
