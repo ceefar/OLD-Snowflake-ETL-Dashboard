@@ -338,23 +338,12 @@ def run():
 
     # DATE SELECTER container
     with st.container():
-
+        st.write("##")
         st.markdown("### Store Revenue Breakdown")
-
-        # date select
-        stores_list = ['Chesterfield', 'Uppingham', 'Longridge', 'London Camden', 'London Soho']
-        dashboardRevDate1, dashboardRevDate2 = st.columns(2)
-        with dashboardRevDate1:
-            user_start_date = st.date_input("What Start Date?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate1")  
-        with dashboardRevDate2:
-            user_end_date = st.date_input("What End Date?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate2")  
-
-
-        #TODO
-        # - function if start date after end date (and else validation) 
-
+  
         # store select and img print
         st.write("##")
+        stores_list = ['Chesterfield', 'Uppingham', 'Longridge', 'London Camden', 'London Soho'] 
         dashboardRevStore1, dashboardRevStore2, dashboardRevStore3  = st.columns([1,2,2])
         with dashboardRevStore2:
             store_selector = st.selectbox("Choose The Store", options=stores_list, index=0, key="dashrevstore") 
@@ -365,9 +354,9 @@ def run():
             except FileNotFoundError:
                 print("FileNotFoundError")
 
-        # get revenue data from db for given store
-        # BUG - just randomly errors, wrapping in try except so it runs it again as it does work fine
+        # get revenue based data from db for given store
         try:
+            # random bug, throws an error but works fine when page re-runs so try accept just to force to run twice idk why
             store_alltime_rev = db.get_stores_breakdown_revenue_via_bizi(store_selector, "alltime")
         except AttributeError:
             store_alltime_rev = db.get_stores_breakdown_revenue_via_bizi(store_selector, "alltime")
@@ -386,18 +375,8 @@ def run():
         first_store_date = just_store_dates_list[0]
         last_store_date = just_store_dates_list[-1]
 
-        just_week_of_year_list = db.get_stores_breakdown_revenue_via_bizi(store_selector, "weekofyear")
-        just_week_of_year_list = sorted(just_week_of_year_list)
-
-        final_week_of_year_list = [] 
-        dont_print_2 = [final_week_of_year_list.append(weeknumb[0]) for weeknumb in just_week_of_year_list]
-
-        st.write("---")
-
-        weekBreakdownCol1, weekBreakdownCol2 = st.columns(2)
-
-        weeknumberselect = weekBreakdownCol1.selectbox(label="Choose A Week", options=final_week_of_year_list)
         st.write("##")
+        st.write("---")
 
         # new basic metric setup
         dashRevMetricCol1, dashRevMetricCol2, dashRevMetricCol3, dashRevMetricCol4 = st.columns(4)
@@ -411,69 +390,119 @@ def run():
         st.write("---")
         st.write("##")
 
-        monCol, tueCol, wedCol, thuCol, friCol, satCol, sunCol = st.columns(7)
 
-        # get each day in loop starting at monday for the given week number
-        # ADD A WEEK NUMBER SELECT WITH WEEK STARTING OOOOOOO! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< (JUST SHOW IT TO THE RIGHT OF THE BOX DUHHH) #FIXME
-        st.write("")
-        weekBreakdownDict = {}
-        daynumb_dayname_dict = {1:"Monday",2:"Tuesday",3:"Wednesday",4:"Thursday",5:"Friday",6:"Saturday",7:"Sunday"}
-        for i in range(1,8):
-            #print(i)
-            data_for_day = run_query(f"SELECT * FROM redshift_bizinsights WHERE WEEKOFYEAR(current_day) = {weeknumberselect} AND DAYOFWEEKISO(current_day) = {i} AND store_name = '{store_selector}'")
-            #print(f"{data_for_day = }")
-            weekBreakdownDict[daynumb_dayname_dict[i]] = list(data_for_day)
+        # ---- ANALYSIS TOGGLE ----
+        _, userCompareCol, _ = st.columns([2,2,2])
+        with userCompareCol:
+            userCompareSelect = st.radio(label="Choose Analysis Type", options=["Days of The Week", "Compare 2 Dates"], horizontal=True)
+            st.write("##")
 
 
+        # ---- COMPARE 2 DATES ----
+        if userCompareSelect == "Compare 2 Dates":
 
-        #FIXME - USE PREVIOUS DICT COL IDEA FOR THIS TOO?!
-
-        # f strings to fix decimal places and add currency! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        # obvs can add more shit from the dict too
-        # obvs need lil title and date starting n shit 
-        # then between 2 days
-        # then for a month or b month
-        # then done, could tidy but nah do later just move on to finish up whatelse (other minor charts n shit)
-
-        # Monday
-        try:
-            monCol.metric(label="Monday Revenue", value=float(weekBreakdownDict["Monday"][0][0]))
-        except IndexError:
-            monCol.metric(label="Monday Revenue", value="No Data")
-        # Tuesday
-        try:
-            tueCol.metric(label="Tuesday Revenue", value=float(weekBreakdownDict["Tuesday"][0][0]))
-        except IndexError:
-            tueCol.metric(label="Tuesday Revenue", value="No Data")
-        # Wednesday
-        try:
-            wedCol.metric(label="Wednesday Revenue", value=float(weekBreakdownDict["Wednesday"][0][0]))
-        except IndexError:
-            wedCol.metric(label="Wednesday Revenue", value="No Data")
-        # Thursday
-        try:
-            thuCol.metric(label="Thursday Revenue", value=float(weekBreakdownDict["Thursday"][0][0]))
-        except IndexError:
-            thuCol.metric(label="Thursday Revenue", value="No Data")
-        # Friday
-        try:
-            friCol.metric(label="Friday Revenue", value=float(weekBreakdownDict["Friday"][0][0]))
-        except IndexError:
-            friCol.metric(label="Friday Revenue", value="No Data")
-        # Saturday
-        try:
-            satCol.metric(label="Saturday Revenue", value=float(weekBreakdownDict["Saturday"][0][0]))
-        except IndexError:
-            satCol.metric(label="Saturday Revenue", value="No Data")
-        # Sunday
-        try:
-            sunCol.metric(label="Sunday Revenue", value=float(weekBreakdownDict["Sunday"][0][0]))
-        except IndexError:
-            sunCol.metric(label="Sunday Revenue", value="No Data")            
+            #TODO - function if start date after end date (and else validation)
+            dashboardRevDate1, dashboardRevDate2 = st.columns(2)
+            with dashboardRevDate1:
+                user_start_date = st.date_input("What Start Date?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate1")  
+            with dashboardRevDate2:
+                user_end_date = st.date_input("What End Date?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate2") 
+                
+            st.write("---")
 
 
+        # ---- DAYS OF THE WEEK ----
+        elif userCompareSelect == "Days of The Week":
+
+            final_week_of_year_list = [] 
+            just_week_of_year_list = db.get_stores_breakdown_revenue_via_bizi(store_selector, "weekofyear")
+            just_week_of_year_list = sorted(just_week_of_year_list)
+
+            dont_print_2 = [final_week_of_year_list.append(weeknumb[0]) for weeknumb in just_week_of_year_list]
+
+            _, weekBreakdownCol1, weekBreakdownCol2 = st.columns([1,2,1])
+            weeknumberselect = weekBreakdownCol1.selectbox(label="Choose A Week", options=final_week_of_year_list)  
+            # TODO - COULD LEGIT JUST HAVE LIKE A PRINT OF A CALENDAR AND HIGHLIGHT THE WEEK (THIS WOULD ACTUALLY BE SO EASY!)
+
+            st.write("---")
+            st.write("##")
 
 
+            # get each day in loop starting at monday for the given week number
+            # ADD A WEEK NUMBER SELECT WITH WEEK STARTING OOOOOOO! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            # - JUST SHOW IT TO THE RIGHT OF THE BOX DUHHH, WAY EASIER THAT WAY, CONSIDER OWN FUNCTION #FIXME
+            st.write("")
+            weekBreakdownDict = {}
+            daynumb_dayname_dict = {1:"Monday",2:"Tuesday",3:"Wednesday",4:"Thursday",5:"Friday",6:"Saturday",7:"Sunday"}
+            for i in range(1,8):
+                data_for_day = run_query(f"SELECT * FROM redshift_bizinsights WHERE WEEKOFYEAR(current_day) = {weeknumberselect} AND DAYOFWEEKISO(current_day) = {i} AND store_name = '{store_selector}'")
+                weekBreakdownDict[daynumb_dayname_dict[i]] = list(data_for_day)
+
+            # f strings to fix decimal places and add currency! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< 
+            # obvs can add more shit from the dict too 
+            # obvs need lil title and date starting n shit 
+            # then between 2 days 
+            # then for a month or b month 
+            # then done, could tidy but nah do later just move on to finish up whatelse (other minor charts n shit) 
+            # for sure correlations n shit! 
+
+            #FIXME
+            # ALSO CONSIDER USE PREVIOUS DICT COL FUNCTION IDEA FOR THIS TOO?! 
+
+            # OMG SO MUCH THIS, LITTLE IMG/COLOUR/HEAT/SPEEDO BARS THAT SHOW HOW WELL PERFOMING VS OTHERS FOR THE WEEK!!!!
+
+            st.markdown("#### Weekly Breakdown")
+            st.write("##")
+            monCol, tueCol, wedCol, thuCol, friCol, satCol, sunCol = st.columns(7)
+            # Monday 
+            monCol.markdown("Monday")
+            try:
+                monCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Monday'][0][0]):.2f}")
+                monCol.write("##")
+                monCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Monday'][0][1]):.2f}")
+            except IndexError:
+                monCol.metric(label="Revenue", value="N/A")
+                monCol.write("##")
+                monCol.metric(label="Avg Customer Spen", value="N/A")
+            # Tuesday
+            tueCol.markdown("Tuesday")
+            try:
+                tueCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Tuesday'][0][0]):.2f}")
+                tueCol.write("##")
+                tueCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Tuesday'][0][1]):.2f}")
+            except IndexError:
+                tueCol.metric(label="Revenue", value="N/A")
+                tueCol.write("##")
+                tueCol.metric(label="Avg Customer Spend", value="N/A")
+            # Wednesday
+            try:
+                wedCol.metric(label="Wednesday", value=f"${float(weekBreakdownDict['Wednesday'][0][0]):.2f}") 
+            except IndexError:
+                wedCol.metric(label="Wednesday", value="N/A")
+            # Thursday
+            try:
+                thuCol.metric(label="Thursday", value=f"${float(weekBreakdownDict['Thursday'][0][0]):.2f}")
+            except IndexError:
+                thuCol.metric(label="Thursday", value="N/A")
+            # Friday
+            try:
+                friCol.metric(label="Friday", value=f"${float(weekBreakdownDict['Friday'][0][0]):.2f}")
+            except IndexError:
+                friCol.metric(label="Friday", value="N/A")
+            # Saturday
+            try:
+                satCol.metric(label="Saturday", value=f"${float(weekBreakdownDict['Saturday'][0][0]):.2f}")
+            except IndexError:
+                satCol.metric(label="Saturday", value="N/A")
+            # Sunday
+            try:
+                sunCol.metric(label="Sunday", value=f"${float(weekBreakdownDict['Sunday'][0][0]):.2f}")
+            except IndexError:
+                sunCol.metric(label="Sunday", value="N/A")            
+
+            #print(weekBreakdownDict)
+
+            # PUT AVG SPEND AND THE REST IN THERE OR SECTION OUT - TEST TO SEE CAUSE HAVE TO CONSIDER FORMATTING FOR N/A (should be fine tbf?)
 
         # NEXT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         # then ig quickly implement between 2 days, month
