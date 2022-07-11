@@ -74,9 +74,18 @@ def get_cups_sold_by_hour_one_store(store_name, current_day) -> tuple:
 
 def get_cups_sold_by_time_of_day(time_of_day_enum) -> tuple:
     """ write me """
-    cups_sold_for_time_of_day_query = f"SELECT COUNT(i.item_name) AS cupsSold, i.item_name, d.time_of_day FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE d.time_of_day = {time_of_day_enum} GROUP BY i.item_name, d.time_of_day ORDER BY i.item_name "
+    cups_sold_for_time_of_day_query = f"SELECT COUNT(i.item_name) AS cupsSold, i.item_name, d.time_of_day FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE d.time_of_day = {time_of_day_enum} GROUP BY i.item_name, d.time_of_day ORDER BY i.item_name"
     cups_sold_for_time_of_day = run_query(cups_sold_for_time_of_day_query)
     #FIXME: replace the int/enum with string of the time of day (is just easier) 
     #TODO: use a for loop and .replace() for this??
     # print(cups_sold_for_time_of_day)
     return(cups_sold_for_time_of_day)
+
+
+# ---- NEW app dashboard - store revenue breakdown ----
+
+def get_stores_breakdown_revenue_via_bizi(store_name):
+    """ bizi meaning from biz insights table, potentially may cause slighly less complete data but will do for now """
+    # leaving open to refactor for not just all time by using parameters
+    store_alltime_rev = run_query(f"SELECT SUM(total_revenue_for_day), COUNT(total_revenue_for_day) FROM redshift_bizinsights WHERE store_name = '{store_name}'")
+    return(store_alltime_rev[0][0])

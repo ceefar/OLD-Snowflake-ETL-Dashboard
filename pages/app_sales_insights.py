@@ -144,6 +144,8 @@ def run():
             cupForHour = source4.loc[source4['HourOfDay'] == value, 'CupsSold'].sum()
             results_dict[value] = cupForHour
 
+        # FIXME
+        # BUG - longridge 05/07 zero division error
         average_hourcups = sum(results_dict.values()) / len(results_dict.values())
 
         # create a new dictionary from hour/cups dictionary but sorted
@@ -828,6 +830,9 @@ def run():
         RedLabelTea_Afternoon = afternoon_sales[14]
         Smoothies_Afternoon = afternoon_sales[15]
         SpecialityTea_Afternoon = afternoon_sales[16] #####
+
+
+        # like what dates is this, proper info on why no flavours, general info, etc etc
 
         # least popular as no flavours duh (make this clear)
         st.write("#### Less Popular - All Days - All Stores - Volume Sold (Popularity)") # time of day popularity or sumnt?
