@@ -46,7 +46,7 @@ with st.sidebar:
     st.write("##")
     st.markdown("#### Portfolio Mode")
     st.write("To view live code snippets")
-    devmode = st.checkbox("Portfolio Mode")
+    devmode = st.checkbox("Portfolio Mode", key="devmode-insights")
     st.write("##")
     st.markdown("#### Advanced Mode")
     st.write("For more advanced query options")

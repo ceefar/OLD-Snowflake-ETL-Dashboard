@@ -84,8 +84,27 @@ def get_cups_sold_by_time_of_day(time_of_day_enum) -> tuple:
 
 # ---- NEW app dashboard - store revenue breakdown ----
 
-def get_stores_breakdown_revenue_via_bizi(store_name):
-    """ bizi meaning from biz insights table, potentially may cause slighly less complete data but will do for now """
-    # leaving open to refactor for not just all time by using parameters
-    store_alltime_rev = run_query(f"SELECT SUM(total_revenue_for_day), COUNT(total_revenue_for_day) FROM redshift_bizinsights WHERE store_name = '{store_name}'")
-    return(store_alltime_rev[0][0])
+def get_stores_breakdown_revenue_via_bizi(store_name, i_want="alltime"):
+    """
+    i_want = input parameter for which query you want returned,
+    - alltime = sum of all total revenue 
+    - alltimedates = revenue for the day with its date returned as tuple (day_revenue:decimal, date:datetime)
+    - justdays = count of all valid days (for completeness)
+    - weekofyear = just (unique) week numbers
+    bizi meaning from biz insights table, potentially may cause slighly less complete data but will do for now
+    """
+    if i_want == "alltime":
+        store_alltime_rev = run_query(f"SELECT SUM(total_revenue_for_day) FROM redshift_bizinsights WHERE store_name = '{store_name}'")
+        return(store_alltime_rev[0][0])
+    elif i_want == "alltimedates":
+        store_alltime_datesrev = run_query(f"SELECT total_revenue_for_day, current_day FROM redshift_bizinsights WHERE store_name = '{store_name}'")
+        return(store_alltime_datesrev) # list of tuples (decimal, datetime)
+    elif i_want == "justdays":
+        just_all_days_count = run_query(f"SELECT DISTINCT DATE(timestamp) FROM redshift_customerdata")
+        return(len(just_all_days_count))
+    elif i_want == "weekofyear":
+        just_week_of_year = run_query(f"SELECT DISTINCT WEEKOFYEAR(current_day) FROM redshift_bizinsights WHERE store_name = '{store_name}'")
+        return(just_week_of_year)
+    else:
+        return(0)
+    

@@ -140,7 +140,7 @@ with st.sidebar:
     st.write("##")
     st.markdown("#### Portfolio Mode")
     st.write("To view live code snippets")
-    devmode = st.checkbox("Portfolio Mode")
+    devmode2 = st.checkbox("Portfolio Mode", key="devmode2-menus")
 
 def run():
 
@@ -180,7 +180,7 @@ def run():
 
 
 
-        if devmode:
+        if devmode2:
             st.write("##")
             with st.expander("Creating Menu Images - Part 1"):
                 with st.echo():
@@ -249,7 +249,7 @@ def run():
         store_menu_img = arty.draw_dynamic_store_menu(f"{store_selector}.png", final_menu, store_selector)
         st.image(store_menu_img)
         
-        if devmode:
+        if devmode2:
             st.write("##")
             with st.expander("Creating Menu Images - Part 2"):
                 st.write("Partial Code From My External Module Artist.py, Which Uses PIL (pillow)")
