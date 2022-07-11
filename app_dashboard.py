@@ -105,7 +105,7 @@ def run():
 
     # SIDEBAR portfolio/developer mode toggle
     with st.sidebar:
-        dev_mode = st.checkbox(label="Portfolio Mode")
+        dev_mode = st.checkbox(label="Portfolio Mode ", key="devmode-dash")
         if dev_mode:
             WIDE_MODE_INFO = """
             Portfolio Mode Active\n
@@ -334,19 +334,7 @@ def run():
 
 
 
-
-
     # ---- New Section - Revenue Breakdown ----
-
-    # AITE SO LETS DO REVENUE BETWEEN DATES WITH OPTION FOR WEEK AND MONTH HERE 
-    # - then maybe find some lil revenue specific extras to stick on top idk
-
-    # ok so first its a store selector obvs
-    # then you see all time regardless with a toggle for between dates (on that only for now ig) or for a full month
-    # then below that is a week view and you can then select week by week from here
-    # compare 2 stores might be nice too but could save for sumnt else tbf
-    # then we'll explore more revenue breakdown stuff here too
-
 
     # DATE SELECTER container
     with st.container():
@@ -357,9 +345,9 @@ def run():
         stores_list = ['Chesterfield', 'Uppingham', 'Longridge', 'London Camden', 'London Soho']
         dashboardRevDate1, dashboardRevDate2 = st.columns(2)
         with dashboardRevDate1:
-            user_start_date = st.date_input("What Date Would You Like Info On?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate1")  
+            user_start_date = st.date_input("What Start Date?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate1")  
         with dashboardRevDate2:
-            user_end_date = st.date_input("What Date Would You Like Info On?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate2")  
+            user_end_date = st.date_input("What End Date?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate2")  
 
 
         #TODO
@@ -367,7 +355,7 @@ def run():
 
         # store select and img print
         st.write("##")
-        dashboardRevStore1, dashboardRevStore2 = st.columns([1,4])
+        dashboardRevStore1, dashboardRevStore2, dashboardRevStore3  = st.columns([1,2,2])
         with dashboardRevStore2:
             store_selector = st.selectbox("Choose The Store", options=stores_list, index=0, key="dashrevstore") 
         with dashboardRevStore1:
@@ -375,12 +363,131 @@ def run():
                 dashRevStore_img = store_img_display(True, store_selector)
                 st.image(dashRevStore_img)
             except FileNotFoundError:
-                print("")
+                print("FileNotFoundError")
 
-        store_alltime_rev = db.get_stores_breakdown_revenue_via_bizi(store_selector)
-        st.write(store_alltime_rev)
+        # get revenue data from db for given store
+        # BUG - just randomly errors, wrapping in try except so it runs it again as it does work fine
+        try:
+            store_alltime_rev = db.get_stores_breakdown_revenue_via_bizi(store_selector, "alltime")
+        except AttributeError:
+            store_alltime_rev = db.get_stores_breakdown_revenue_via_bizi(store_selector, "alltime")
+
+        storedates_alltime_rev = db.get_stores_breakdown_revenue_via_bizi(store_selector, "alltimedates")
+        # get total available days for completeness, is dynamic so takes account all given days in db
+        just_total_days_all_stores = db.get_stores_breakdown_revenue_via_bizi(store_selector, "justdays")
+
+        just_store_dates_list = []
+        dont_print = [just_store_dates_list.append(storedate[1]) for storedate in storedates_alltime_rev]
+        with dashboardRevStore3:
+            just_store_dates_list = sorted(just_store_dates_list)
+            stores_dates = st.selectbox("Dates With Available Data (Not Selectable)", options=just_store_dates_list, index=0, key="dashdatesstore") 
+
+        datadays_for_store = len(just_store_dates_list)
+        first_store_date = just_store_dates_list[0]
+        last_store_date = just_store_dates_list[-1]
+
+        just_week_of_year_list = db.get_stores_breakdown_revenue_via_bizi(store_selector, "weekofyear")
+        just_week_of_year_list = sorted(just_week_of_year_list)
+
+        final_week_of_year_list = [] 
+        dont_print_2 = [final_week_of_year_list.append(weeknumb[0]) for weeknumb in just_week_of_year_list]
+
+        st.write("---")
+
+        weekBreakdownCol1, weekBreakdownCol2 = st.columns(2)
+
+        weeknumberselect = weekBreakdownCol1.selectbox(label="Choose A Week", options=final_week_of_year_list)
+        st.write("##")
+
+        # new basic metric setup
+        dashRevMetricCol1, dashRevMetricCol2, dashRevMetricCol3, dashRevMetricCol4 = st.columns(4)
+
+        # btw surely need some validation here 
+        dashRevMetricCol1.metric(label="All Time Revenue", value=f"${store_alltime_rev:.2f}")
+        dashRevMetricCol2.metric(label="Avg Daily Revenue", value=f"${(store_alltime_rev / datadays_for_store):.2f}")
+        dashRevMetricCol3.metric(label="Days of Data", value=f"{datadays_for_store}")
+        dashRevMetricCol4.metric(label="Completeness [Days]", value=f"{((datadays_for_store/just_total_days_all_stores) * 100):.1f}%")
+
+        st.write("---")
+        st.write("##")
+
+        monCol, tueCol, wedCol, thuCol, friCol, satCol, sunCol = st.columns(7)
+
+        # get each day in loop starting at monday for the given week number
+        # ADD A WEEK NUMBER SELECT WITH WEEK STARTING OOOOOOO! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< (JUST SHOW IT TO THE RIGHT OF THE BOX DUHHH) #FIXME
+        st.write("")
+        weekBreakdownDict = {}
+        daynumb_dayname_dict = {1:"Monday",2:"Tuesday",3:"Wednesday",4:"Thursday",5:"Friday",6:"Saturday",7:"Sunday"}
+        for i in range(1,8):
+            #print(i)
+            data_for_day = run_query(f"SELECT * FROM redshift_bizinsights WHERE WEEKOFYEAR(current_day) = {weeknumberselect} AND DAYOFWEEKISO(current_day) = {i} AND store_name = '{store_selector}'")
+            #print(f"{data_for_day = }")
+            weekBreakdownDict[daynumb_dayname_dict[i]] = list(data_for_day)
 
 
+
+        #FIXME - USE PREVIOUS DICT COL IDEA FOR THIS TOO?!
+
+        # f strings to fix decimal places and add currency! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        # obvs can add more shit from the dict too
+        # obvs need lil title and date starting n shit 
+        # then between 2 days
+        # then for a month or b month
+        # then done, could tidy but nah do later just move on to finish up whatelse (other minor charts n shit)
+
+        # Monday
+        try:
+            monCol.metric(label="Monday Revenue", value=float(weekBreakdownDict["Monday"][0][0]))
+        except IndexError:
+            monCol.metric(label="Monday Revenue", value="No Data")
+        # Tuesday
+        try:
+            tueCol.metric(label="Tuesday Revenue", value=float(weekBreakdownDict["Tuesday"][0][0]))
+        except IndexError:
+            tueCol.metric(label="Tuesday Revenue", value="No Data")
+        # Wednesday
+        try:
+            wedCol.metric(label="Wednesday Revenue", value=float(weekBreakdownDict["Wednesday"][0][0]))
+        except IndexError:
+            wedCol.metric(label="Wednesday Revenue", value="No Data")
+        # Thursday
+        try:
+            thuCol.metric(label="Thursday Revenue", value=float(weekBreakdownDict["Thursday"][0][0]))
+        except IndexError:
+            thuCol.metric(label="Thursday Revenue", value="No Data")
+        # Friday
+        try:
+            friCol.metric(label="Friday Revenue", value=float(weekBreakdownDict["Friday"][0][0]))
+        except IndexError:
+            friCol.metric(label="Friday Revenue", value="No Data")
+        # Saturday
+        try:
+            satCol.metric(label="Saturday Revenue", value=float(weekBreakdownDict["Saturday"][0][0]))
+        except IndexError:
+            satCol.metric(label="Saturday Revenue", value="No Data")
+        # Sunday
+        try:
+            sunCol.metric(label="Sunday Revenue", value=float(weekBreakdownDict["Sunday"][0][0]))
+        except IndexError:
+            sunCol.metric(label="Sunday Revenue", value="No Data")            
+
+
+
+
+
+        # NEXT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        # then ig quickly implement between 2 days, month
+
+
+
+    # AITE SO LETS DO REVENUE BETWEEN DATES WITH OPTION FOR WEEK AND MONTH HERE 
+    # - then maybe find some lil revenue specific extras to stick on top idk
+
+    # ok so first its a store selector obvs
+    # then you see all time regardless with a toggle for between dates (on that only for now ig) or for a full month
+    # then below that is a week view and you can then select week by week from here
+    # compare 2 stores might be nice too but could save for sumnt else tbf
+    # then we'll explore more revenue breakdown stuff here too
 
 
 
