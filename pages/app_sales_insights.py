@@ -67,7 +67,6 @@ def run():
     with st.container():
         st.write(f"### :bulb: Insight - Sales vs Time of Day") 
         st.write("##### AKA Popularity")
-        st.write("Includes everything except the 3 most popular items") # because they are all favoured so really theres 15 not 3
         st.write("##")
 
         stores_list = ['Chesterfield', 'Uppingham', 'Longridge',  'London Camden', 'London Soho']
@@ -731,116 +730,106 @@ def run():
         #
         #st.altair_chart(pie_chart1, use_container_width=True)
 
-
-
         st.write("##")
         st.write("##")
         st.write("---")
 
 
+    # ---- end compare 2 items altair chart section ----
 
 
 
 
 
 
-###############################################
+    ################### NEW #######################
 
-
-
-
-
-
-
-
-
-
-
-    
-    ## ADD TO CONTAINER BELOW
-
-
-    breakfast_sales = db.get_cups_sold_by_time_of_day(1)
-    earlylunch_sales = db.get_cups_sold_by_time_of_day(2)
-    latelunch_sales = db.get_cups_sold_by_time_of_day(3)
-    afternoon_sales = db.get_cups_sold_by_time_of_day(4)
-
-    ChaiLatte_Breaky = breakfast_sales[0]
-    Cortado_Breaky = breakfast_sales[1]
-    Espresso_Breaky = breakfast_sales[2]
-    FlatWhite_Breaky = breakfast_sales[3]
-    FlavouredHotChocolate_Breaky = breakfast_sales[4]
-    FlavouredIcedLatte_Breaky = breakfast_sales[5] #####
-    FlavouredLatte_Breaky = breakfast_sales[6]
-    Frappes_Breaky = breakfast_sales[7]
-    GlassOfMilk_Breaky = breakfast_sales[8]
-    HotChocolate_Breaky = breakfast_sales[9]
-    IcedLatte_Breaky = breakfast_sales[10]
-    Latte_Breaky = breakfast_sales[11]
-    LuxuryHotChocolate_Breaky = breakfast_sales[12]
-    Mocha_Breaky = breakfast_sales[13]
-    RedLabelTea_Breaky = breakfast_sales[14]
-    Smoothies_Breaky = breakfast_sales[15] 
-    SpecialityTea_Breaky = breakfast_sales[16] #####
-
-    ChaiLatte_Lunch = earlylunch_sales[0]
-    Cortado_Lunch = earlylunch_sales[1]
-    Espresso_Lunch = earlylunch_sales[2]
-    FlatWhite_Lunch = earlylunch_sales[3]
-    FlavouredHotChocolate_Lunch = earlylunch_sales[4]
-    FlavouredIcedLatte_Lunch = earlylunch_sales[5]
-    FlavouredLatte_Lunch = earlylunch_sales[6]
-    Frappes_Lunch = earlylunch_sales[7]
-    GlassOfMilk_Lunch = earlylunch_sales[8]
-    HotChocolate_Lunch = earlylunch_sales[9]
-    IcedLatte_Lunch = earlylunch_sales[10]
-    Latte_Lunch = earlylunch_sales[11]
-    LuxuryHotChocolate_Lunch = earlylunch_sales[12]
-    Mocha_Lunch = earlylunch_sales[13]
-    RedLabelTea_Lunch = earlylunch_sales[14]
-    Smoothies_Lunch = earlylunch_sales[15]
-    SpecialityTea_Lunch = earlylunch_sales[16] #####
-
-    ChaiLatte_LateLunch = latelunch_sales[0]
-    Cortado_LateLunch = latelunch_sales[1]
-    Espresso_LateLunch = latelunch_sales[2]
-    FlatWhite_LateLunch = latelunch_sales[3]
-    FlavouredHotChocolate_LateLunch = latelunch_sales[4]
-    FlavouredIcedLatte_LateLunch = latelunch_sales[5] #####
-    FlavouredLatte_LateLunch = latelunch_sales[6]
-    Frappes_LateLunch = latelunch_sales[7]
-    GlassOfMilk_LateLunch = latelunch_sales[8]
-    HotChocolate_LateLunch = latelunch_sales[9]
-    IcedLatte_LateLunch = latelunch_sales[10]
-    Latte_LateLunch = latelunch_sales[11]
-    LuxuryHotChocolate_LateLunch = latelunch_sales[12]
-    Mocha_LateLunch = latelunch_sales[13]
-    RedLabelTea_LateLunch = latelunch_sales[14]
-    Smoothies_LateLunch = latelunch_sales[15]
-    SpecialityTea_LateLunch = latelunch_sales[16] #####
-
-    ChaiLatte_Afternoon = afternoon_sales[0]
-    Cortado_Afternoon = afternoon_sales[1]
-    Espresso_Afternoon = afternoon_sales[2]
-    FlatWhite_Afternoon = afternoon_sales[3]
-    FlavouredHotChocolate_Afternoon = afternoon_sales[4]
-    FlavouredIcedLatte_Afternoon = afternoon_sales[5] #####
-    FlavouredLatte_Afternoon = afternoon_sales[6]
-    Frappes_Afternoon = afternoon_sales[7]
-    GlassOfMilk_Afternoon = afternoon_sales[8]
-    HotChocolate_Afternoon = afternoon_sales[9]
-    IcedLatte_Afternoon = afternoon_sales[10]
-    Latte_Afternoon = afternoon_sales[11]
-    LuxuryHotChocolate_Afternoon = afternoon_sales[12]
-    Mocha_Afternoon = afternoon_sales[13]
-    RedLabelTea_Afternoon = afternoon_sales[14]
-    Smoothies_Afternoon = afternoon_sales[15]
-    SpecialityTea_Afternoon = afternoon_sales[16] #####
 
     # CHART name container
     with st.container():
 
-        # DO LIKE LEAST POP, MOST POP - OBVS FLAV ONES HAVE FLAVS SO THIS IS WHY THEY WANNA BE SECTIONED AGAIN THEMSELVES BUT MEH ANOTHER TIME
+        # note - i created this in week 1, hence why the duplication
+        # obvs as above compare example can be done by extending lists into 1 field
+        # but logic still good so straight ported over and tweaked
+
+        breakfast_sales = db.get_cups_sold_by_time_of_day(1)
+        earlylunch_sales = db.get_cups_sold_by_time_of_day(2)
+        latelunch_sales = db.get_cups_sold_by_time_of_day(3)
+        afternoon_sales = db.get_cups_sold_by_time_of_day(4)
+
+        ChaiLatte_Breaky = breakfast_sales[0]
+        Cortado_Breaky = breakfast_sales[1]
+        Espresso_Breaky = breakfast_sales[2]
+        FlatWhite_Breaky = breakfast_sales[3]
+        FlavouredHotChocolate_Breaky = breakfast_sales[4]
+        FlavouredIcedLatte_Breaky = breakfast_sales[5] #####
+        FlavouredLatte_Breaky = breakfast_sales[6]
+        Frappes_Breaky = breakfast_sales[7]
+        GlassOfMilk_Breaky = breakfast_sales[8]
+        HotChocolate_Breaky = breakfast_sales[9]
+        IcedLatte_Breaky = breakfast_sales[10]
+        Latte_Breaky = breakfast_sales[11]
+        LuxuryHotChocolate_Breaky = breakfast_sales[12]
+        Mocha_Breaky = breakfast_sales[13]
+        RedLabelTea_Breaky = breakfast_sales[14]
+        Smoothies_Breaky = breakfast_sales[15] 
+        SpecialityTea_Breaky = breakfast_sales[16] #####
+
+        ChaiLatte_Lunch = earlylunch_sales[0]
+        Cortado_Lunch = earlylunch_sales[1]
+        Espresso_Lunch = earlylunch_sales[2]
+        FlatWhite_Lunch = earlylunch_sales[3]
+        FlavouredHotChocolate_Lunch = earlylunch_sales[4]
+        FlavouredIcedLatte_Lunch = earlylunch_sales[5]
+        FlavouredLatte_Lunch = earlylunch_sales[6]
+        Frappes_Lunch = earlylunch_sales[7]
+        GlassOfMilk_Lunch = earlylunch_sales[8]
+        HotChocolate_Lunch = earlylunch_sales[9]
+        IcedLatte_Lunch = earlylunch_sales[10]
+        Latte_Lunch = earlylunch_sales[11]
+        LuxuryHotChocolate_Lunch = earlylunch_sales[12]
+        Mocha_Lunch = earlylunch_sales[13]
+        RedLabelTea_Lunch = earlylunch_sales[14]
+        Smoothies_Lunch = earlylunch_sales[15]
+        SpecialityTea_Lunch = earlylunch_sales[16] #####
+
+        ChaiLatte_LateLunch = latelunch_sales[0]
+        Cortado_LateLunch = latelunch_sales[1]
+        Espresso_LateLunch = latelunch_sales[2]
+        FlatWhite_LateLunch = latelunch_sales[3]
+        FlavouredHotChocolate_LateLunch = latelunch_sales[4]
+        FlavouredIcedLatte_LateLunch = latelunch_sales[5] #####
+        FlavouredLatte_LateLunch = latelunch_sales[6]
+        Frappes_LateLunch = latelunch_sales[7]
+        GlassOfMilk_LateLunch = latelunch_sales[8]
+        HotChocolate_LateLunch = latelunch_sales[9]
+        IcedLatte_LateLunch = latelunch_sales[10]
+        Latte_LateLunch = latelunch_sales[11]
+        LuxuryHotChocolate_LateLunch = latelunch_sales[12]
+        Mocha_LateLunch = latelunch_sales[13]
+        RedLabelTea_LateLunch = latelunch_sales[14]
+        Smoothies_LateLunch = latelunch_sales[15]
+        SpecialityTea_LateLunch = latelunch_sales[16] #####
+
+        ChaiLatte_Afternoon = afternoon_sales[0]
+        Cortado_Afternoon = afternoon_sales[1]
+        Espresso_Afternoon = afternoon_sales[2]
+        FlatWhite_Afternoon = afternoon_sales[3]
+        FlavouredHotChocolate_Afternoon = afternoon_sales[4]
+        FlavouredIcedLatte_Afternoon = afternoon_sales[5] #####
+        FlavouredLatte_Afternoon = afternoon_sales[6]
+        Frappes_Afternoon = afternoon_sales[7]
+        GlassOfMilk_Afternoon = afternoon_sales[8]
+        HotChocolate_Afternoon = afternoon_sales[9]
+        IcedLatte_Afternoon = afternoon_sales[10]
+        Latte_Afternoon = afternoon_sales[11]
+        LuxuryHotChocolate_Afternoon = afternoon_sales[12]
+        Mocha_Afternoon = afternoon_sales[13]
+        RedLabelTea_Afternoon = afternoon_sales[14]
+        Smoothies_Afternoon = afternoon_sales[15]
+        SpecialityTea_Afternoon = afternoon_sales[16] #####
+
+        # least popular as no flavours duh (make this clear)
         st.write("#### Less Popular - All Days - All Stores - Volume Sold (Popularity)") # time of day popularity or sumnt?
         st.write("Consider removing the least popular products (lowest volume) for new ones, particularly if profit margins are small")
         st.write("##")
@@ -896,12 +885,12 @@ def run():
                     })
 
         bar_chart6 = alt.Chart(source6).mark_bar().encode(
-            color="TimeOfDay:N", # x="month(Date):O",
+            color="TimeOfDay:N",
             x="CupsSold:Q",
             y="CoffeeType:N"
-        ).properties(height=600, width=1000)
+        ).properties(height=600)
 
-        text6 = alt.Chart(source6).mark_text(dx=-10, dy=3, color='white', fontSize=12, fontWeight=600).encode(
+        text6 = alt.Chart(source6).mark_text(dx=-10, dy=3, color='white', fontSize=10, fontWeight=600).encode(
             x=alt.X('CupsSold:Q', stack='zero'),
             y=alt.Y('CoffeeType:N'),
             detail='TimeOfDay:N',

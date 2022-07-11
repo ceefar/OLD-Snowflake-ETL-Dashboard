@@ -76,4 +76,7 @@ def get_cups_sold_by_time_of_day(time_of_day_enum) -> tuple:
     """ write me """
     cups_sold_for_time_of_day_query = f"SELECT COUNT(i.item_name) AS cupsSold, i.item_name, d.time_of_day FROM redshift_customeritems i inner join redshift_customerdata d on (i.transaction_id = d.transaction_id) WHERE d.time_of_day = {time_of_day_enum} GROUP BY i.item_name, d.time_of_day ORDER BY i.item_name "
     cups_sold_for_time_of_day = run_query(cups_sold_for_time_of_day_query)
+    #FIXME: replace the int/enum with string of the time of day (is just easier) 
+    #TODO: use a for loop and .replace() for this??
+    # print(cups_sold_for_time_of_day)
     return(cups_sold_for_time_of_day)
