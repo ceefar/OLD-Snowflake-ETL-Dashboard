@@ -371,7 +371,7 @@ def run():
             store_alltime_rev = db.get_stores_breakdown_revenue_via_bizi(store_selector, "alltime")
         except AttributeError:
             store_alltime_rev = db.get_stores_breakdown_revenue_via_bizi(store_selector, "alltime")
-            
+
         storedates_alltime_rev = db.get_stores_breakdown_revenue_via_bizi(store_selector, "alltimedates")
         # get total available days for completeness, is dynamic so takes account all given days in db
         just_total_days_all_stores = db.get_stores_breakdown_revenue_via_bizi(store_selector, "justdays")
@@ -431,6 +431,9 @@ def run():
         # f strings to fix decimal places and add currency! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         # obvs can add more shit from the dict too
         # obvs need lil title and date starting n shit 
+        # then between 2 days
+        # then for a month or b month
+        # then done, could tidy but nah do later just move on to finish up whatelse (other minor charts n shit)
 
         # Monday
         try:
