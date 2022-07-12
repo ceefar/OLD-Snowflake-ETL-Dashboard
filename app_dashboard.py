@@ -466,24 +466,27 @@ def run():
             # print(actual_first_day[0][0])
             weekBreakdownCol1.markdown(f"#### Week Commencing : {actual_first_day[0][0]}")
 
-            # should cache artist prints btw as will be atleast somewhat computationally expensive
-            june_start_weeknumb = 22
-            highlight_week = weeknumberselect - june_start_weeknumb
-            calendar_highlight = arty.highlight_calendar(highlight_week, weeknumberselect)
-            weekBreakdownCol2.image(calendar_highlight)
-
             # to display 
             days_available = []
             days_available_count = 0
+            # for pasting ticks to calendar img
+            week_array = []
             for i in range(1,8):
                 try:
                     days_available.append(f"{daynumb_dayname_dict[i]} - Available [{weekBreakdownDict[daynumb_dayname_dict[i]][0][4]}]")
                     days_available_count += 1
+                    week_array.append(True)
                 except IndexError:
                     days_available.append(f"{daynumb_dayname_dict[i]} - No Data")
+                    week_array.append(False)    
+
+            # should cache artist prints btw as will be atleast somewhat computationally expensive
+            june_start_weeknumb = 22
+            highlight_week = weeknumberselect - june_start_weeknumb
+            calendar_highlight = arty.highlight_calendar(highlight_week, weeknumberselect, week_array)
+            weekBreakdownCol2.image(calendar_highlight)         
 
             # FIXME
-            # would love to use this data to add ticks in each box of the image
             # can do a super basic html component here to remove any gap
             weekBreakdownCol1.markdown(f"##### {days_available_count} of 7 Days Available")
             weekBreakdownCol1.markdown(f"###### {((days_available_count/7)*100):.2f}% Availability")
