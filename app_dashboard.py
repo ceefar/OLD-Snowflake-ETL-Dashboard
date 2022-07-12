@@ -411,13 +411,89 @@ def run():
             with dashboardRevDate2:
                 user_end_date = st.date_input("What End Date?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate2") 
                 
-            #TODO - function if start date after end date (and else validation)    
+            #TODO - function if start date after end date (and else validation) -> ! skip validate part for now tho !
             #def is_start_before_end():
-                # NOT LIKE THIS THO - NEED AS INT DUH! - skip validate part for now anyways
+                # NOT LIKE THIS THO - NEED AS INT DUH! - 
                 #print(f"{user_start_date = }")
                 #print(f"{user_end_date = }")
                 #daydiff = run_query(f"SELECT TO_DATE(DATEADD(day, {user_start_date}, '{user_end_date}'))")
                 #print(f"{daydiff = }")
+
+            # FOR METRIC COMPARE 2 STORES (which now do want tbf)
+            # SO IG MAKE THIS A LOOP, TO DO IT FOR BOTH SIDES (left right) / QUERIES / STORE + BOTH_DATES
+            # SO BOSH DO THIS VERTICALLY, 1 COL ONE SIDE 1 THE OTHER AND COMPARE IN THE MIDDLE BOSH!
+
+            metric2Col1, metric2Col2, metric2Col3, metric2Col4 = st.columns(4)
+            metric2Col1.metric(label="Total Revenue", value=f"${metric_tot_rev_val:.2f}", delta=f"${metric_tot_rev_delta:.2f}", delta_color="normal")
+            metric2Col2.metric(label="Avg Spend", value=f"${metric_avg_spend_val:.2f}", delta=f"${metric_avg_spend_delta:.2f}", delta_color="normal")
+            metric2Col3.metric(label="Total Customers", value=metric_tot_cust_val, delta=metric_tot_cust_delta, delta_color="normal") 
+            metric2Col4.metric(label="Total Coffees Sold", value=metric_tot_cofs_val, delta=metric_tot_cofs_delta, delta_color="normal")
+
+
+
+            
+            
+            metric2Val = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
+                                    SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day BETWEEN '{user_start_date}' AND '{user_end_date}' AND store_name = '{store_selector}';")
+            print(metric2Val)
+
+            # SICK WORKS SICKLY AND WILL BE PRETTY EASY SO DO THE TRIPLE TOGGLE WITH THE NEW ABOVE IDEA TOO
+            # IF WANT A BREAK INBETWEEN DO THE NEW IMAGE THING
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             st.write("---")
 
