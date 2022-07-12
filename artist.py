@@ -141,14 +141,24 @@ def draw_dynamic_store_menu(imgname:str, listItems:list, listTitle:str) -> str:
 
 
 
-def highlight_calendar(weeknumb:int) -> str:
+def highlight_calendar(weeknumb:int, actualweeknumb:int) -> str:
     """ write me pls ceef """
 
-    # path for the final image
-    imgpath = f'imgs/test_june_{weeknumb}.png'
+    # set base image to be june or july based on the week number
+    if 22 <= actualweeknumb <= 26:
+        # open june img as img object
+        img = Image.open('imgs/Calendar-2022-June.png')
+        # path for the final image
+        imgpath = f'imgs/test_june_{weeknumb}.png'
+    else:
+        # open july img as img object
+        img = Image.open('imgs/Calendar-2022-July.png')   
+        # path for the final image
+        imgpath = f'imgs/test_july_{weeknumb}.png' 
+        # change weeknumb for july, will start with weeknumb being 5 so -4 as need it to be +1 for offset the highlight for july 
+        # as first week is actually the last from june (1st - 3rd)
+        weeknumb -= 4
 
-    # open img object
-    img = Image.open('imgs/Calendar-2022-June.png')
     # setup base object from original bg img and open it for drawing 
     imgDraw = ImageDraw.Draw(img)
 
@@ -176,7 +186,7 @@ def highlight_calendar(weeknumb:int) -> str:
         n2 += (incVar * 2) + nudgeVar
         n4 += (incVar * 4) + (nudgeVar*2)
     elif weeknumb == 4:    
-        n2 += (incVar * 3) + (nudgeVar*2)
+        n2 += (incVar * 3) + (nudgeVar)
         n4 += (incVar * 5) + (nudgeVar*2)
 
     # resulting position x dimensions

@@ -462,7 +462,7 @@ def run():
             # should cache artist prints btw as will be atleast somewhat computationally expensive
             june_start_weeknumb = 22
             highlight_week = weeknumberselect - june_start_weeknumb
-            calendar_highlight = arty.highlight_calendar(highlight_week)
+            calendar_highlight = arty.highlight_calendar(highlight_week, weeknumberselect)
             weekBreakdownCol2.image(calendar_highlight)
 
             # to display 
@@ -470,10 +470,10 @@ def run():
             days_available_count = 0
             for i in range(1,8):
                 try:
-                    days_available.append(f"Available - {daynumb_dayname_dict[i]} [{weekBreakdownDict[daynumb_dayname_dict[i]][0][4]}]")
+                    days_available.append(f"{daynumb_dayname_dict[i]} - Available [{weekBreakdownDict[daynumb_dayname_dict[i]][0][4]}]")
                     days_available_count += 1
                 except IndexError:
-                    days_available.append(f"No Data - {daynumb_dayname_dict[i]}")
+                    days_available.append(f"{daynumb_dayname_dict[i]} - No Data")
 
             # FIXME
             # note really quick need to do the july image too!
