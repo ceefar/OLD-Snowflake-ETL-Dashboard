@@ -412,11 +412,12 @@ def run():
                 user_end_date = st.date_input("What End Date?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate2") 
                 
             #TODO - function if start date after end date (and else validation)    
-            def is_start_before_end():
-                print(f"{user_start_date = }")
-                print(f"{user_end_date = }")
-                daydiff = run_query(f"SELECT TO_DATE(DATEADD(day, {user_start_date}, '{user_end_date}'))")
-                print(f"{daydiff = }")
+            #def is_start_before_end():
+                # NOT LIKE THIS THO - NEED AS INT DUH! - skip validate part for now anyways
+                #print(f"{user_start_date = }")
+                #print(f"{user_end_date = }")
+                #daydiff = run_query(f"SELECT TO_DATE(DATEADD(day, {user_start_date}, '{user_end_date}'))")
+                #print(f"{daydiff = }")
 
             st.write("---")
 
