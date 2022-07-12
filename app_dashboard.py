@@ -93,6 +93,8 @@ def split_metric_eafp(results:tuple, vals_or_delta:str) -> list: # big type hint
         return(values_result)
 
 
+
+
 # ---- main web app ----
 
 def run():
@@ -425,15 +427,11 @@ def run():
             #_, weekBreakdownCol1, weekBreakdownCol2 = st.columns([1,2,1])
             weekBreakdownCol1, weekBreakdownCol2 = st.columns([2,2])
             weeknumberselect = weekBreakdownCol1.selectbox(label="Choose A Week", options=final_week_of_year_list)  
-            # TODO - COULD LEGIT JUST HAVE LIKE A PRINT OF A CALENDAR AND HIGHLIGHT THE WEEK (THIS WOULD ACTUALLY BE SO EASY!)
 
             st.write("---")
             st.write("##")
 
-
             # get each day in loop starting at monday for the given week number
-            # ADD A WEEK NUMBER SELECT WITH WEEK STARTING OOOOOOO! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            # - JUST SHOW IT TO THE RIGHT OF THE BOX DUHHH, WAY EASIER THAT WAY, CONSIDER OWN FUNCTION #FIXME
             st.write("")
             weekBreakdownDict = {}
             daynumb_dayname_dict = {1:"Monday",2:"Tuesday",3:"Wednesday",4:"Thursday",5:"Friday",6:"Saturday",7:"Sunday"}
@@ -467,7 +465,22 @@ def run():
             calendar_highlight = arty.highlight_calendar(highlight_week)
             weekBreakdownCol2.image(calendar_highlight)
 
+            # to display 
+            days_available = []
+            days_available_count = 0
+            for i in range(1,8):
+                try:
+                    days_available.append(f"Available - {daynumb_dayname_dict[i]} [{weekBreakdownDict[daynumb_dayname_dict[i]][0][4]}]")
+                    days_available_count += 1
+                except IndexError:
+                    days_available.append(f"No Data - {daynumb_dayname_dict[i]}")
 
+            # FIXME
+            # note really quick need to do the july image too!
+            # would love to use this data to add ticks in each box of the image
+            # can do a super basic html component here to remove any gap
+            weekBreakdownCol1.markdown(f"##### {days_available_count} of 7 Days Available")
+            dont_print_3 = [weekBreakdownCol1.write(days_available[i]) for i in range(0,7)] # but it does actually print (is temp anyways)
 
 
             # f strings to fix decimal places and add currency! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< 

@@ -152,47 +152,49 @@ def highlight_calendar(weeknumb:int) -> str:
     # setup base object from original bg img and open it for drawing 
     imgDraw = ImageDraw.Draw(img)
 
-
-    #FIXME - DO CROP HERE DUHHHHH!
-
-
     # save the bg before adding rectangle highlight
     img.save(imgpath)
+
+    # ---- start rectangle ----
 
     # create new draw object with transparency option
     img1 = ImageDraw.Draw(img, "RGBA")
 
+    nudgeVar = 5
+    incVar = 90
+    n1 = 930 # doesnt change (assuming width)
+    n2 = 220
+    n3 = 30 # doesnt change (assuming height)
+    n4 = 127
 
-    # VERY TEMP, OBVS DO PROPERLY
-
-    inc = 180
-    w1 = 127
-    w2 = 307
-    w3 = 487
-    w4 = 590
-    
-    if weeknumb == 0:
-        pos0 = [930, 220, 30, w1]
-        img1.rectangle(pos0, fill=(255, 0, 0, 55)) # A, 220, B, 127
-    elif weeknumb == 1:
-        pos1 = [930, 220, 30, w2]
-        img1.rectangle(pos1, fill=(255, 0, 0, 55))
+    if weeknumb == 1:
+        n4 += (incVar * 2) + nudgeVar
     elif weeknumb == 2:
-        pos2 = [930, 220+90, 30, 400]
-        img1.rectangle(pos2, fill=(255, 0, 0, 55))
+        n2 += incVar
+        n4 += (incVar*3) + (nudgeVar*2)
     elif weeknumb == 3:
-        pos3 = [930, 220+inc, 30, w3]
-        img1.rectangle(pos3, fill=(255, 0, 0, 55))
-    elif weeknumb == 4:
-        pos4 = [930, 220+270, 30, w4]
-        img1.rectangle(pos4, fill=(255, 0, 0, 55))
- 
+        n2 += (incVar * 2) + nudgeVar
+        n4 += (incVar * 4) + (nudgeVar*2)
+    elif weeknumb == 4:    
+        n2 += (incVar * 3) + (nudgeVar*2)
+        n4 += (incVar * 5) + (nudgeVar*2)
+
+    # resulting position x dimensions
+    # [930, 220, 30, 127]
+    # [930, 220, 30, 307]
+    # [930, 310, 30, 397]
+    # [930, 400, 30, 487]
+    # [930, 490, 30, 577]
+
+    # semi-dynamically set the rectangle vars
+    rectPos = [n1, n2, n3, n4]
     # draw the rectangle with transparency
-    # img1.rectangle([930, 220+270, 30, w4], fill=(255, 0, 0, 55)) # A, 220, B, 127
+    img1.rectangle(rectPos, fill=(255, 0, 0, 55))
+
+    # crop the bottom off the final img - left pos of crop, top pos of crop, width of final img, height of final img
+    img = img.crop((0, 0, 960, 600))
 
     img.save(imgpath)
     return(imgpath)
 
 
-
-#highlight_calendar(22)
