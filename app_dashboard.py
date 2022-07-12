@@ -343,7 +343,7 @@ def run():
     # DATE SELECTER container
     with st.container():
         st.write("##")
-        st.markdown("### Store Revenue Breakdown")
+        st.markdown("### Store Specific Analysis")
   
         # store select and img print
         st.write("##")
@@ -396,21 +396,33 @@ def run():
 
 
         # ---- ANALYSIS TOGGLE ----
+        
         _, userCompareCol, _ = st.columns([2,2,2])
         with userCompareCol:
-            userCompareSelect = st.radio(label="Choose Analysis Type", options=["Days of The Week", "Compare 2 Dates"], horizontal=True)
+            st.image(store_img_display(True,store_selector))
+            st.markdown(f"### {store_selector}")
+            st.write("Choose Analysis Type")
+        _, radioCol, _ = st.columns([1,3,1])
+        with radioCol:
+            userCompareSelect = st.radio(label=" ", options=["Days of The Week", "Compare Between Dates", "Store vs Store"], horizontal=True)
+            st.write("##")
             st.write("##")
 
+        
 
         # ---- COMPARE 2 DATES ----
-        if userCompareSelect == "Compare 2 Dates":
+        if userCompareSelect == "Compare Between Dates":
 
             dashboardRevDate1, dashboardRevDate2 = st.columns(2)
             with dashboardRevDate1:
-                user_start_date = st.date_input("What Start Date?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate1")  
+                user_start_date = st.date_input("What Start Date?", datetime.date(2022, 7, 1), max_value=yesterdate, min_value=firstdate, key="dashrevdate1")  
             with dashboardRevDate2:
                 user_end_date = st.date_input("What End Date?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate2") 
                 
+
+
+            st.write("##")
+
             #TODO - function if start date after end date (and else validation) -> ! skip validate part for now tho !
             #def is_start_before_end():
                 # NOT LIKE THIS THO - NEED AS INT DUH! - 
@@ -418,77 +430,67 @@ def run():
                 #print(f"{user_end_date = }")
                 #daydiff = run_query(f"SELECT TO_DATE(DATEADD(day, {user_start_date}, '{user_end_date}'))")
                 #print(f"{daydiff = }")
+                # duh just grab month and day if one bigger than the other bosh (obvs check month first then if same check days)
+
+
+            # NOTE THE COMPLETNESS THING ABOVE, CAN JUST CHUCK A NEW QUERY INTO THAT DB_INTEGRATION FUNCTION
+
+            _, compareMetInfoCol1, compareMetInfoCol2, compareMetInfoCol3, _ = st.columns(5)
+            diff_between_dates = run_query(f"SELECT DATEDIFF(day,'{user_start_date}','{user_end_date}')")
+            diff_between_dates = diff_between_dates[0][0]
+            st.write("##")
+            with compareMetInfoCol1:
+                st.metric(label=f"Days Difference", value=f"{diff_between_dates}")
+                st.write("---")
+            with compareMetInfoCol2:
+                st.metric(label=f"Days Available", value=f"X")
+                st.write("---")
+            with compareMetInfoCol3:
+                st.metric(label=f"Availability", value=f"X%") 
+                st.write("---")               
+
+
+            metric2Val = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
+                                    SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day BETWEEN '{user_start_date}' AND '{user_end_date}' AND store_name = '{store_selector}';")
+            
+
+            metric2ValResults = split_metric_eafp(metric2Val[0], "vals")
+            metric2_tot_rev_val, metric2_avg_spend_val, metric2_tot_cust_val, metric2_tot_cofs_val = float(metric2ValResults[0]), float(metric2ValResults[1]), metric2ValResults[2], metric2ValResults[3]
+
+            metric2Col1, metric2Col2, metric2Col3, metric2Col4, metric2Col5 = st.columns(5)
+            metric2Col1.metric(label="Total Revenue", value = metric2_tot_rev_val, delta=f"${metric_tot_rev_val:.2f}", delta_color="normal")
+            metric2Col2.metric(label="Avg Spend", value = metric2_avg_spend_val, delta=f"${metric_avg_spend_val:.2f}", delta_color="normal")
+            metric2Col3.metric(label="Total Customers", value = metric2_tot_cust_val, delta=metric_tot_cust_val, delta_color="normal") 
+            metric2Col4.metric(label="Total Coffees Sold", value = metric2_tot_cofs_val, delta=metric_tot_cofs_val, delta_color="normal")
+            # OBVS TO DO AND MOVE TO 2ND OR 3RD POSITION, AND ADD DELTA FOR IT TOO!
+            metric2Col5.metric(label="Avg Revenue Per Day", value = 1, delta=1, delta_color="normal")
+
+            st.write("##")
+            st.write(f"Delta Values are All Time Stats for {store_selector}")
+            
+
+
+
+        # THEN QUICKLY FINISH THIS METRIC THEN BOSH DO STORE COMPARE THEN IMG TING FOR BOTTOM BIT
+        # THEN THOSE OTHER CHARTS ON OTHER PAGE
+        # THEN THE NOTES FROM THE WEDNESDAY SECTION IN TOD0_NOTES.TXT
+
+
+        # ---- COMPARE 2 DATES ----
+        if userCompareSelect == "Store vs Store":
+
+            storeVsCol1, storeVsCol2 = st.columns(2)
+            with storeVsCol1:
+                store1_vs_selector = st.selectbox("Choose First Store To Compare", options=stores_list, index=0, key="store1vs") 
+            with storeVsCol2:
+                store2_vs_selector = st.selectbox("Choose Second Store To Compare", options=stores_list, index=0, key="store2vs")                 
+            
 
             # FOR METRIC COMPARE 2 STORES (which now do want tbf)
             # SO IG MAKE THIS A LOOP, TO DO IT FOR BOTH SIDES (left right) / QUERIES / STORE + BOTH_DATES
             # SO BOSH DO THIS VERTICALLY, 1 COL ONE SIDE 1 THE OTHER AND COMPARE IN THE MIDDLE BOSH!
 
-            metric2Col1, metric2Col2, metric2Col3, metric2Col4 = st.columns(4)
-            metric2Col1.metric(label="Total Revenue", value=f"${metric_tot_rev_val:.2f}", delta=f"${metric_tot_rev_delta:.2f}", delta_color="normal")
-            metric2Col2.metric(label="Avg Spend", value=f"${metric_avg_spend_val:.2f}", delta=f"${metric_avg_spend_delta:.2f}", delta_color="normal")
-            metric2Col3.metric(label="Total Customers", value=metric_tot_cust_val, delta=metric_tot_cust_delta, delta_color="normal") 
-            metric2Col4.metric(label="Total Coffees Sold", value=metric_tot_cofs_val, delta=metric_tot_cofs_delta, delta_color="normal")
-
-
-
-            
-            
-            metric2Val = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
-                                    SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day BETWEEN '{user_start_date}' AND '{user_end_date}' AND store_name = '{store_selector}';")
-            print(metric2Val)
-
-            # SICK WORKS SICKLY AND WILL BE PRETTY EASY SO DO THE TRIPLE TOGGLE WITH THE NEW ABOVE IDEA TOO
-            # IF WANT A BREAK INBETWEEN DO THE NEW IMAGE THING
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            # FOR 2 COMPARE HAVE THE DELTA BE THE PREVIOUS METRIC (as in the all time stats) 
 
 
 
