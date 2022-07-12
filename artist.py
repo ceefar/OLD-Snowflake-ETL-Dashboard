@@ -141,7 +141,7 @@ def draw_dynamic_store_menu(imgname:str, listItems:list, listTitle:str) -> str:
 
 
 
-def highlight_calendar(weeknumb:int, actualweeknumb:int) -> str:
+def highlight_calendar(weeknumb:int, actualweeknumb:int, weekarray:list) -> str:
     """ write me pls ceef """
 
     # set base image to be june or july based on the week number
@@ -199,7 +199,37 @@ def highlight_calendar(weeknumb:int, actualweeknumb:int) -> str:
     # semi-dynamically set the rectangle vars
     rectPos = [n1, n2, n3, n4]
     # draw the rectangle with transparency
-    img1.rectangle(rectPos, fill=(255, 0, 0, 55))
+    img1.rectangle(rectPos, fill=(34, 139, 34, 55)) # 255, 0, 0 - red | 124, 252, 0 - grass green | 34, 139, 34 - forest green [current]
+
+
+    # ---- add ticks/crosses ----
+    
+    tickimg = Image.open("imgs/checked.png")  
+    tickimg = tickimg.resize((50, 50))
+    tickimg = tickimg.convert("RGBA")
+
+    crossimg = Image.open("imgs/cancel.png")  
+    crossimg = crossimg.resize((50, 50))
+    crossimg = crossimg.convert("RGBA")
+
+    # to increment base variables for pasting
+    xincrement = 130
+    yincrement = 93
+    
+    # base variables (week 0, monday)
+    ybase = 148
+    xbase = 70
+
+    # paste the image in place (image, (x, y), color/mask)
+    # week (y) modifier
+    i = weeknumb
+    # day (x modifier)
+    for j, day in enumerate(weekarray):
+        if day:
+            # if day == true paste tick, else print cross
+            img.paste(tickimg, ((xbase + (xincrement*j)), ybase + (yincrement*i)), tickimg)
+        else:
+            img.paste(crossimg, ((xbase + (xincrement*j)), ybase + (yincrement*i)), crossimg)
 
     # crop the bottom off the final img - left pos of crop, top pos of crop, width of final img, height of final img
     img = img.crop((0, 0, 960, 600))
@@ -208,3 +238,26 @@ def highlight_calendar(weeknumb:int, actualweeknumb:int) -> str:
     return(imgpath)
 
 
+
+
+
+
+
+# week rows in month
+#for i in range(0,5):
+#    # days of the week
+#    for j in range(0,7):
+#        img.paste(tickimg, ((xbase + (xincrement*j)), ybase + (yincrement*i)), tickimg)
+
+# manually configuring
+#img.paste(tickimg, (70, 148), tickimg)
+#img.paste(tickimg, (200, 148), tickimg)
+#img.paste(tickimg, (330, 148), tickimg)
+#img.paste(tickimg, (460, 148), tickimg)
+#img.paste(tickimg, (590, 148), tickimg)
+#img.paste(tickimg, (720, 148), tickimg)
+#img.paste(tickimg, (850, 148), tickimg)
+#img.paste(tickimg, (70, ybase + yincrement), tickimg)
+#img.paste(tickimg, (70, ybase + (yincrement*2)), tickimg)
+#img.paste(tickimg, (70, ybase + (yincrement*3)), tickimg)
+#img.paste(tickimg, (70, ybase + (yincrement*4)), tickimg)
