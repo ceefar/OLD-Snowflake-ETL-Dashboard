@@ -405,7 +405,6 @@ def run():
         # ---- COMPARE 2 DATES ----
         if userCompareSelect == "Compare 2 Dates":
 
-            
             dashboardRevDate1, dashboardRevDate2 = st.columns(2)
             with dashboardRevDate1:
                 user_start_date = st.date_input("What Start Date?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate1")  
@@ -414,7 +413,10 @@ def run():
                 
             #TODO - function if start date after end date (and else validation)    
             def is_start_before_end():
-                pass
+                print(f"{user_start_date = }")
+                print(f"{user_end_date = }")
+                daydiff = run_query(f"SELECT TO_DATE(DATEADD(day, {user_start_date}, '{user_end_date}'))")
+                print(f"{daydiff = }")
 
             st.write("---")
 
