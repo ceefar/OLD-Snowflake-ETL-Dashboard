@@ -645,20 +645,33 @@ def run():
             # then done, could tidy but nah do later just move on to finish up whatelse (other minor charts n shit) 
             # for sure correlations n shit! 
 
-            #FIXME
-            # ALSO CONSIDER USE PREVIOUS DICT COL FUNCTION IDEA FOR THIS TOO?! 
 
             # OMG SO MUCH THIS, LITTLE IMG/COLOUR/HEAT/SPEEDO BARS THAT SHOW HOW WELL PERFOMING VS OTHERS FOR THE WEEK!!!!
 
 
             st.markdown("#### Weekly Breakdown")
             st.write("##")
-            monCol, tueCol, wedCol, thuCol, friCol, satCol, sunCol = st.columns(7)
+            avgCol, monCol, tueCol, wedCol, thuCol, friCol, satCol, sunCol = st.columns(8)
+
+            # The Weekly Avg
+            data_for_week_for_avg = run_query(f"SELECT AVG(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), AVG(total_customers_for_day), AVG(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE WEEKOFYEAR(current_day) = {weeknumberselect} AND store_name = '{store_selector}'")
+            weekavg_rev, weekavg_cs, weekavg_custs, weekavg_drinks = data_for_week_for_avg[0]
+
+            avgCol.markdown("##### Week Average")
+            avgCol.write(f"{days_available_count} Days of Data")
+            avgCol.metric(label="Revenue", value=f"${float(weekavg_rev):.2f}")
+            avgCol.write("##")
+            avgCol.metric(label="Avg Customer Spend", value=f"${float(weekavg_cs):.2f}")
+            avgCol.write("##")
+            avgCol.metric(label="Total Customers", value=f"{float(weekavg_custs):.0f}")      
+            avgCol.write("##")
+            avgCol.metric(label="Coffees Sold", value=f"{float(weekavg_drinks):.0f}")                  
+
             # Monday 
             monCol.markdown("##### Monday")
             try:
                 monCol.markdown(f"{weekBreakdownDict['Monday'][0][4]}")
-                monCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Monday'][0][0]):.2f}")
+                monCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Monday'][0][0]):.2f}", delta=f"{(float(weekBreakdownDict['Monday'][0][0]) - float(weekavg_rev)):.2f}", delta_color="normal")
                 monCol.write("##")
                 monCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Monday'][0][1]):.2f}")
                 monCol.write("##")
@@ -667,7 +680,7 @@ def run():
                 monCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Monday'][0][3])}")                
             except IndexError:
                 monCol.write("-")
-                monCol.metric(label="Revenue", value="N/A")
+                monCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off")
                 monCol.write("##")
                 monCol.metric(label="Avg Customer Spend", value="N/A")
                 monCol.write("##")
@@ -678,7 +691,7 @@ def run():
             tueCol.markdown("##### Tuesday")
             try:
                 tueCol.markdown(f"{weekBreakdownDict['Tuesday'][0][4]}")
-                tueCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Tuesday'][0][0]):.2f}")
+                tueCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Tuesday'][0][0]):.2f}", delta=f"{(float(weekBreakdownDict['Tuesday'][0][0]) - float(weekavg_rev)):.2f}", delta_color="normal")
                 tueCol.write("##")
                 tueCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Tuesday'][0][1]):.2f}")
                 tueCol.write("##")
@@ -687,7 +700,7 @@ def run():
                 tueCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Tuesday'][0][3])}")                               
             except IndexError:
                 tueCol.write("-")
-                tueCol.metric(label="Revenue", value="N/A")
+                tueCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off")
                 tueCol.write("##")
                 tueCol.metric(label="Avg Customer Spend", value="N/A")
                 tueCol.write("##")
@@ -698,7 +711,7 @@ def run():
             wedCol.markdown("##### Wednesday")
             try:
                 wedCol.markdown(f"{weekBreakdownDict['Wednesday'][0][4]}")
-                wedCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Wednesday'][0][0]):.2f}") 
+                wedCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Wednesday'][0][0]):.2f}", delta=f"{(float(weekBreakdownDict['Wednesday'][0][0]) - float(weekavg_rev)):.2f}", delta_color="normal") 
                 wedCol.write("##")
                 wedCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Wednesday'][0][1]):.2f}") 
                 wedCol.write("##")
@@ -707,7 +720,7 @@ def run():
                 wedCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Wednesday'][0][3])}")                            
             except IndexError:
                 wedCol.write("-")
-                wedCol.metric(label="Revenue", value="N/A")
+                wedCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off")
                 wedCol.write("##")
                 wedCol.metric(label="Avg Customer Spend", value="N/A")
                 wedCol.write("##")
@@ -718,7 +731,7 @@ def run():
             thuCol.markdown("##### Thursday")
             try:
                 thuCol.markdown(f"{weekBreakdownDict['Thursday'][0][4]}")
-                thuCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Thursday'][0][0]):.2f}")
+                thuCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Thursday'][0][0]):.2f}", delta=f"{(float(weekBreakdownDict['Thursday'][0][0]) - float(weekavg_rev)):.2f}", delta_color="normal")
                 thuCol.write("##")
                 thuCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Thursday'][0][1]):.2f}")
                 thuCol.write("##")
@@ -727,7 +740,7 @@ def run():
                 thuCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Thursday'][0][3])}")                       
             except IndexError:
                 thuCol.write("-")
-                thuCol.metric(label="Revenue", value="N/A")
+                thuCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off")
                 thuCol.write("##")
                 thuCol.metric(label="Avg Customer Spend", value="N/A")
                 thuCol.write("##")
@@ -738,7 +751,7 @@ def run():
             friCol.markdown("##### Friday")
             try:
                 friCol.markdown(f"{weekBreakdownDict['Friday'][0][4]}")
-                friCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Friday'][0][0]):.2f}")
+                friCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Friday'][0][0]):.2f}", delta=f"{(float(weekBreakdownDict['Friday'][0][0]) - float(weekavg_rev)):.2f}", delta_color="normal")
                 friCol.write("##")
                 friCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Friday'][0][1]):.2f}")
                 friCol.write("##")
@@ -747,7 +760,7 @@ def run():
                 friCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Friday'][0][3])}")                              
             except IndexError:
                 friCol.write("-")
-                friCol.metric(label="Revenue", value="N/A")
+                friCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off")
                 friCol.write("##")
                 friCol.metric(label="Avg Customer Spend", value="N/A")
                 friCol.write("##")
@@ -758,7 +771,7 @@ def run():
             satCol.markdown("##### Saturday")
             try:
                 satCol.markdown(f"{weekBreakdownDict['Saturday'][0][4]}")
-                satCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Saturday'][0][0]):.2f}")
+                satCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Saturday'][0][0]):.2f}", delta=f"{(float(weekBreakdownDict['Saturday'][0][0]) - float(weekavg_rev)):.2f}", delta_color="normal")
                 satCol.write("##")
                 satCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Saturday'][0][1]):.2f}")
                 satCol.write("##")
@@ -767,7 +780,7 @@ def run():
                 satCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Saturday'][0][3])}")                
             except IndexError:
                 satCol.write("-")
-                satCol.metric(label="Revenue", value="N/A")
+                satCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off")
                 satCol.write("##")
                 satCol.metric(label="Avg Customer Spend", value="N/A")
                 satCol.write("##")
@@ -778,7 +791,7 @@ def run():
             sunCol.markdown("##### Sunday")
             try:
                 sunCol.markdown(f"{weekBreakdownDict['Sunday'][0][4]}")
-                sunCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Sunday'][0][0]):.2f}")
+                sunCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Sunday'][0][0]):.2f}", delta=f"{(float(weekBreakdownDict['Sunday'][0][0]) - float(weekavg_rev)):.2f}", delta_color="normal")
                 sunCol.write("##")
                 sunCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Sunday'][0][1]):.2f}")
                 sunCol.write("##")
@@ -787,7 +800,7 @@ def run():
                 sunCol.metric(label="Coffees Solid", value=f"{int(weekBreakdownDict['Sunday'][0][3])}")                              
             except IndexError:
                 sunCol.write("-")
-                sunCol.metric(label="Revenue", value="N/A") 
+                sunCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off") 
                 sunCol.write("##")
                 sunCol.metric(label="Avg Customer Spend", value="N/A")
                 sunCol.write("##")
