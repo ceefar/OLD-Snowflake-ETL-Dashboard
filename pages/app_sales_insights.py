@@ -492,7 +492,6 @@ def run():
         # BUG - HUGE BUG THE NONE ISSUE NOW - which is fine tbf as i expected but still 100% need to do - see camden i think
 
 
-
         if advanced_options_1:
             # needed for assignment error (will be written again but meh)
             # right (item 2)

@@ -42,6 +42,7 @@ def get_basic_dates(return_date:str) -> datetime: # actually returns datetime.da
     """ 
     get current date, yesterdays date, the first date with valid data in the db
     """
+
     # big fan of using dictionaries for switch cases if you can't tell, this grabs the query based on the given passed parameter (e.g. current)
     what_date_dict = {"current":run_query("SELECT DATE(GETDATE())"), "yesterday":run_query("SELECT DATE(DATEADD(day,-1,GETDATE()))"),
                         "first":run_query("SELECT current_day FROM redshift_bizinsights ORDER BY current_day ASC LIMIT 1")}
@@ -84,13 +85,15 @@ def get_cups_sold_by_time_of_day(time_of_day_enum) -> tuple:
 
 # ---- NEW app dashboard - store revenue breakdown ----
 
-def get_stores_breakdown_revenue_via_bizi(store_name, i_want="alltime"):
+def get_stores_breakdown_revenue_via_bizi(store_name:str, i_want:str = "alltime", somedates:tuple = ("2022-06-07","2022-07-05")):
     """
     i_want = input parameter for which query you want returned,
     - alltime = sum of all total revenue 
     - alltimedates = revenue for the day with its date returned as tuple (day_revenue:decimal, date:datetime)
     - justdays = count of all valid days (for completeness)
     - weekofyear = just (unique) week numbers
+    - thesedays = like just days, a count of valid days, but between two given dates and only for one store
+    - datesavgrevenue = average revenue between two dates
     bizi meaning from biz insights table, potentially may cause slighly less complete data but will do for now
     """
     if i_want == "alltime":
@@ -102,9 +105,15 @@ def get_stores_breakdown_revenue_via_bizi(store_name, i_want="alltime"):
     elif i_want == "justdays":
         just_all_days_count = run_query(f"SELECT DISTINCT DATE(timestamp) FROM redshift_customerdata")
         return(len(just_all_days_count))
+    elif i_want == "thesedays":
+        just_all_days_count = run_query(f"SELECT DISTINCT DATE(timestamp) FROM redshift_customerdata WHERE store = '{store_name}' AND DATE(timestamp) BETWEEN '{somedates[0]}' AND '{somedates[1]}'")
+        return(len(just_all_days_count))
     elif i_want == "weekofyear":
         just_week_of_year = run_query(f"SELECT DISTINCT WEEKOFYEAR(current_day) FROM redshift_bizinsights WHERE store_name = '{store_name}'")
         return(just_week_of_year)
+    elif i_want == "datesavgrevenue":
+        avg_rev_for_dates = run_query(f"SELECT SUM(total_revenue_for_day) FROM redshift_bizinsights WHERE store_name = '{store_name}' AND current_day BETWEEN '{somedates[0]}' AND '{somedates[1]}'")
+        return(avg_rev_for_dates[0][0])    
     else:
         return(0)
     
