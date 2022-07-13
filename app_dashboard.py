@@ -424,46 +424,82 @@ def run():
             st.write("##")
 
             #TODO - function if start date after end date (and else validation) -> ! skip validate part for now tho !
-            #def is_start_before_end():
-                # NOT LIKE THIS THO - NEED AS INT DUH! - 
-                #print(f"{user_start_date = }")
-                #print(f"{user_end_date = }")
-                #daydiff = run_query(f"SELECT TO_DATE(DATEADD(day, {user_start_date}, '{user_end_date}'))")
-                #print(f"{daydiff = }")
-                # duh just grab month and day if one bigger than the other bosh (obvs check month first then if same check days)
+            # duh just grab month and day if one bigger than the other bosh (obvs check month first then if same check days)
 
 
-            # NOTE THE COMPLETNESS THING ABOVE, CAN JUST CHUCK A NEW QUERY INTO THAT DB_INTEGRATION FUNCTION
+            # is inclusive of both dates
+            just_selected_days_for_store = db.get_stores_breakdown_revenue_via_bizi(store_selector, "thesedays", (user_start_date, user_end_date))
+
+            # should place outside run but is just handy to see it for now
+            def calculate_availability_delta_info(available_percent:int):
+                """ takes a percentage (of data availability) and returns text for st.metric delta for the acceptability of the availability """
+                # use a dictionary to store the scores and output string
+                score_dict = {30:"-bad",50:"-poor",65:"acceptable",80:"good",95:"excellent",100:"exceptional"}
+                # use built in min function with key parameter lambda which uses the absolute value
+                score_int = min(score_dict, key=lambda x:abs(x-available_percent))
+                score_delta = score_dict[score_int]
+                return(score_delta.title())
+
+            diff_between_dates = run_query(f"SELECT DATEDIFF(day,'{user_start_date}','{user_end_date}')")
+            # is exclusive while the "these days" query above is inclusive so +1 day to the result
+            diff_between_dates = (diff_between_dates[0][0]) + 1
+            
+            availability_percent = ((just_selected_days_for_store/diff_between_dates)*100)   
+            availability_delta = calculate_availability_delta_info(availability_percent) 
 
             _, compareMetInfoCol1, compareMetInfoCol2, compareMetInfoCol3, _ = st.columns(5)
-            diff_between_dates = run_query(f"SELECT DATEDIFF(day,'{user_start_date}','{user_end_date}')")
-            diff_between_dates = diff_between_dates[0][0]
             st.write("##")
             with compareMetInfoCol1:
-                st.metric(label=f"Days Difference", value=f"{diff_between_dates}")
+                st.metric(label=f"Days Difference", value=f"{diff_between_dates}", delta="inclusive", delta_color="off")
                 st.write("---")
             with compareMetInfoCol2:
-                st.metric(label=f"Days Available", value=f"X")
+                st.metric(label=f"Days Available", value=f"{just_selected_days_for_store}", delta=availability_delta, delta_color="normal")
                 st.write("---")
             with compareMetInfoCol3:
-                st.metric(label=f"Availability", value=f"X%") 
+                st.metric(label=f"Availability", value=f"{availability_percent:.2f}%", delta=availability_delta, delta_color="normal") 
                 st.write("---")               
 
 
+            # ---- Store Metric Queries & Vars ----
+
             metric2Val = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
                                     SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day BETWEEN '{user_start_date}' AND '{user_end_date}' AND store_name = '{store_selector}';")
-            
 
             metric2ValResults = split_metric_eafp(metric2Val[0], "vals")
             metric2_tot_rev_val, metric2_avg_spend_val, metric2_tot_cust_val, metric2_tot_cofs_val = float(metric2ValResults[0]), float(metric2ValResults[1]), metric2ValResults[2], metric2ValResults[3]
 
-            metric2Col1, metric2Col2, metric2Col3, metric2Col4, metric2Col5 = st.columns(5)
-            metric2Col1.metric(label="Total Revenue", value = metric2_tot_rev_val, delta=f"${metric_tot_rev_val:.2f}", delta_color="normal")
-            metric2Col2.metric(label="Avg Spend", value = metric2_avg_spend_val, delta=f"${metric_avg_spend_val:.2f}", delta_color="normal")
-            metric2Col3.metric(label="Total Customers", value = metric2_tot_cust_val, delta=metric_tot_cust_val, delta_color="normal") 
-            metric2Col4.metric(label="Total Coffees Sold", value = metric2_tot_cofs_val, delta=metric_tot_cofs_val, delta_color="normal")
-            # OBVS TO DO AND MOVE TO 2ND OR 3RD POSITION, AND ADD DELTA FOR IT TOO!
-            metric2Col5.metric(label="Avg Revenue Per Day", value = 1, delta=1, delta_color="normal")
+            avgrev_in_selected_dates_for_store = db.get_stores_breakdown_revenue_via_bizi(store_selector, "datesavgrevenue", (user_start_date, user_end_date))
+            avgrev_in_selected_dates_for_store = (avgrev_in_selected_dates_for_store / diff_between_dates)
+            # for the metric delta
+            prev_avgrev_for_store_alltime = (store_alltime_rev / datadays_for_store)
+            # for 2nd metric aka delta detail/difference
+            avg_rev_delta_detail = avgrev_in_selected_dates_for_store - prev_avgrev_for_store_alltime
+
+            # ---- Average Stats ----
+
+            #TODO - ANOTHER DICTIONARY TEXT THING FOR DELTA DETAIL/DIFFERENCE HERE WOULD BE AWESOME 
+            st.write(f"Average Stats for {store_selector}")
+            metric3Col1, metric3Col2, metric3Col3, metric3Col4 = st.columns(4)
+            metric3Col1.metric(label="Avg Revenue", value=f"${avgrev_in_selected_dates_for_store:.2f}", delta=f"${prev_avgrev_for_store_alltime:.2f}", delta_color="normal")
+            metric3Col1.metric(label="Difference", value=f"${avg_rev_delta_detail:.2f}")
+            metric3Col2.metric(label="Avg Spend", value=metric2_avg_spend_val, delta=f"${metric_avg_spend_val:.2f}", delta_color="normal")
+            metric3Col3.metric(label="Avg Daily Customers", value=1, delta=1, delta_color="normal")
+            metric3Col4.metric(label="Avg Coffees Sold", value=1, delta=1, delta_color="normal")
+
+            st.write("##")
+            st.write(f"Delta Values are All Time Averages for {store_selector}")
+
+            st.write("##")
+            st.write("---")
+
+            # ---- General Stats ----
+
+           
+            st.write(f"General Stats for {store_selector}")
+            metric2Col1, metric2Col3, metric2Col4 = st.columns(3)
+            metric2Col1.metric(label="Total Revenue", value = metric2_tot_rev_val, delta=f"${metric_tot_rev_val:.2f}", delta_color="off")
+            metric2Col3.metric(label="Total Customers", value = metric2_tot_cust_val, delta=metric_tot_cust_val, delta_color="off") 
+            metric2Col4.metric(label="Total Coffees Sold", value = metric2_tot_cofs_val, delta=metric_tot_cofs_val, delta_color="off")
 
             st.write("##")
             st.write(f"Delta Values are All Time Stats for {store_selector}")
