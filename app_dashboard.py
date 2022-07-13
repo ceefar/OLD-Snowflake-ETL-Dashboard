@@ -559,10 +559,6 @@ def run():
             # FOR 2 COMPARE HAVE THE DELTA BE THE PREVIOUS METRIC (as in the all time stats) 
 
 
-
-
-
-
             st.write("---")
 
 
@@ -636,164 +632,331 @@ def run():
             weekBreakdownCol1.markdown(f"###### {((days_available_count/7)*100):.2f}% Availability")
             dont_print_3 = [weekBreakdownCol1.write(days_available[i]) for i in range(0,7)] # but it does actually print (is temp anyways)
 
-
-            # f strings to fix decimal places and add currency! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< 
-            # obvs can add more shit from the dict too 
-            # obvs need lil title and date starting n shit 
-            # then between 2 days 
-            # then for a month or b month 
-            # then done, could tidy but nah do later just move on to finish up whatelse (other minor charts n shit) 
-            # for sure correlations n shit! 
-
-            #FIXME
-            # ALSO CONSIDER USE PREVIOUS DICT COL FUNCTION IDEA FOR THIS TOO?! 
-
-            # OMG SO MUCH THIS, LITTLE IMG/COLOUR/HEAT/SPEEDO BARS THAT SHOW HOW WELL PERFOMING VS OTHERS FOR THE WEEK!!!!
-
+            # FOR THE DIFF DELTA WHAT I WANT IS TEXT LIKE OTHER THING I DID!!!
+            # REALLY NEEDS A KEY BTW
+            # ALSO OPTION FOR FULL MONTH COMPARES WOULD BE NICE HERE TOO
 
             st.markdown("#### Weekly Breakdown")
             st.write("##")
-            monCol, tueCol, wedCol, thuCol, friCol, satCol, sunCol = st.columns(7)
+            
+            # toggle for better visual clarity in sections (store revenue, customer revenue, customer visits, coffee sales) 
+            breakdown_type = st.radio(label="Weekly KPI Analysis vs Weekly Average", options=["store revenue","customer spend","total customers","coffee sales"], horizontal=True)
+
+            # should place outside run but is just handy to see it for now
+            def calc_and_get_metric_impact_img(metric:float):
+                """ write me """
+                # use a dictionary to store the impact and output img path
+                impact_dict = {-4:"imgs/battery_0.png", 0:"imgs/battery_1.png", 1.5:"imgs/battery_2.png", 3:"imgs/battery_3.png", 4.5:"imgs/battery_5.png"}
+                # use built in min function with key parameter lambda which uses the absolute value
+                impact_int = min(impact_dict, key=lambda x:abs(x-metric))
+                impact_img_path = impact_dict[impact_int]
+                return(impact_img_path)
+
+            # The Weekly Avg (base query)
+            data_for_week_for_avg = run_query(f"SELECT AVG(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), AVG(total_customers_for_day), AVG(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE WEEKOFYEAR(current_day) = {weeknumberselect} AND store_name = '{store_selector}'")
+            weekavg_rev, weekavg_cs, weekavg_custs, weekavg_drinks = data_for_week_for_avg[0]
+            weekavg_rev = float(weekavg_rev)
+            weekavg_cs = float(weekavg_cs)
+
+            # The Metric
+            avgCol, monCol, tueCol, wedCol, thuCol, friCol, satCol, sunCol = st.columns(8)
+
+            avgCol.markdown("##### Week Average")
+            avgCol.write(f"{days_available_count} Days of Data")
+            if breakdown_type == "store revenue":
+                avgCol.metric(label="Revenue", value=f"${float(weekavg_rev):.2f}", delta="-", delta_color="off")
+                avgCol.write("##")
+                avgCol.metric(label="Difference", value=f"-")
+                avgCol.image("imgs/battery_99.png", width=80)
+                avgCol.write("##")
+            elif breakdown_type == "customer spend":    
+                avgCol.metric(label="Avg Customer Spend", value=f"${float(weekavg_cs):.2f}")
+                avgCol.write("##")
+            elif breakdown_type == "total customers":    
+                avgCol.metric(label="Total Customers", value=f"{float(weekavg_custs):.0f}")      
+                avgCol.write("##")
+            elif breakdown_type == "coffee sales":    
+                avgCol.metric(label="Coffees Sold", value=f"{float(weekavg_drinks):.0f}")     
+
             # Monday 
             monCol.markdown("##### Monday")
             try:
-                monCol.markdown(f"{weekBreakdownDict['Monday'][0][4]}")
-                monCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Monday'][0][0]):.2f}")
-                monCol.write("##")
-                monCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Monday'][0][1]):.2f}")
-                monCol.write("##")
-                monCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Monday'][0][2])}")
-                monCol.write("##")
-                monCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Monday'][0][3])}")                
+                if breakdown_type == "store revenue":
+                    monCol.markdown(f"{weekBreakdownDict['Monday'][0][4]}")
+                    m1delta = (float(weekBreakdownDict['Monday'][0][0]) - weekavg_rev)
+                    monCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Monday'][0][0]):.2f}", delta=f"{m1delta:.2f}", delta_color="normal")
+                    m1diff = (m1delta / weekavg_rev)*100
+                    monCol.write("##")
+                    monCol.metric(label="Difference", value=f"{m1diff:.2f}%")
+                    monCol.image(calc_and_get_metric_impact_img(m1diff), width=80)
+                    monCol.write("##")
+                elif breakdown_type == "customer spend":
+                    monCol.markdown(f"{weekBreakdownDict['Monday'][0][4]}")
+                    monCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Monday'][0][1]):.2f}")
+                    monCol.write("##")
+                elif breakdown_type == "total customers":
+                    monCol.markdown(f"{weekBreakdownDict['Monday'][0][4]}")
+                    monCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Monday'][0][2])}")
+                    monCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    monCol.markdown(f"{weekBreakdownDict['Monday'][0][4]}")
+                    monCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Monday'][0][3])}")                
             except IndexError:
                 monCol.write("-")
-                monCol.metric(label="Revenue", value="N/A")
-                monCol.write("##")
-                monCol.metric(label="Avg Customer Spend", value="N/A")
-                monCol.write("##")
-                monCol.metric(label="Total Customers", value="N/A")
-                monCol.write("##")
-                monCol.metric(label="Coffees Sold", value="N/A")                
+                if breakdown_type == "store revenue":
+                    monCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off")
+                    monCol.write("##")
+                    monCol.metric(label="Difference", value="N/A") 
+                    monCol.image("imgs/battery_99.png", width=80)
+                    monCol.write("##")
+                elif breakdown_type == "customer spend":
+                    monCol.metric(label="Avg Customer Spend", value="N/A")
+                    monCol.write("##")
+                elif breakdown_type == "total customers":
+                    monCol.metric(label="Total Customers", value="N/A")
+                    monCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    monCol.metric(label="Coffees Sold", value="N/A")  
+
             # Tuesday
             tueCol.markdown("##### Tuesday")
             try:
-                tueCol.markdown(f"{weekBreakdownDict['Tuesday'][0][4]}")
-                tueCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Tuesday'][0][0]):.2f}")
-                tueCol.write("##")
-                tueCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Tuesday'][0][1]):.2f}")
-                tueCol.write("##")
-                tueCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Tuesday'][0][2])}")      
-                tueCol.write("##")
-                tueCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Tuesday'][0][3])}")                               
+                if breakdown_type == "store revenue":
+                    tueCol.markdown(f"{weekBreakdownDict['Tuesday'][0][4]}")
+                    tu1delta = (float(weekBreakdownDict['Tuesday'][0][0]) - weekavg_rev)
+                    tueCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Tuesday'][0][0]):.2f}", delta=f"{tu1delta:.2f}", delta_color="normal")
+                    tu1diff = (tu1delta / weekavg_rev)*100
+                    tueCol.write("##")
+                    tueCol.metric(label="Difference", value=f"{tu1diff:.2f}%") 
+                    tueCol.image(calc_and_get_metric_impact_img(tu1diff), width=80)
+                    tueCol.write("##")
+                elif breakdown_type == "customer spend":
+                    tueCol.markdown(f"{weekBreakdownDict['Tuesday'][0][4]}")
+                    tueCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Tuesday'][0][1]):.2f}")
+                    tueCol.write("##")
+                elif breakdown_type == "total customers":
+                    tueCol.markdown(f"{weekBreakdownDict['Tuesday'][0][4]}")
+                    tueCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Tuesday'][0][2])}")      
+                    tueCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    tueCol.markdown(f"{weekBreakdownDict['Tuesday'][0][4]}")
+                    tueCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Tuesday'][0][3])}")                               
             except IndexError:
                 tueCol.write("-")
-                tueCol.metric(label="Revenue", value="N/A")
-                tueCol.write("##")
-                tueCol.metric(label="Avg Customer Spend", value="N/A")
-                tueCol.write("##")
-                tueCol.metric(label="Total Customers", value="N/A")
-                tueCol.write("##")
-                tueCol.metric(label="Coffees Sold", value="N/A")                
+                if breakdown_type == "store revenue":
+                    tueCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off")
+                    tueCol.write("##")
+                    tueCol.metric(label="Difference", value="N/A") 
+                    tueCol.image("imgs/battery_99.png", width=80)
+                    tueCol.write("##")
+                elif breakdown_type == "customer spend":
+                    tueCol.metric(label="Avg Customer Spend", value="N/A")
+                    tueCol.write("##")
+                elif breakdown_type == "total customers":
+                    tueCol.metric(label="Total Customers", value="N/A")
+                    tueCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    tueCol.metric(label="Coffees Sold", value="N/A")   
+
             # Wednesday
             wedCol.markdown("##### Wednesday")
             try:
-                wedCol.markdown(f"{weekBreakdownDict['Wednesday'][0][4]}")
-                wedCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Wednesday'][0][0]):.2f}") 
-                wedCol.write("##")
-                wedCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Wednesday'][0][1]):.2f}") 
-                wedCol.write("##")
-                wedCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Wednesday'][0][2])}")       
-                wedCol.write("##")
-                wedCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Wednesday'][0][3])}")                            
+                if breakdown_type == "store revenue":
+                    wedCol.markdown(f"{weekBreakdownDict['Wednesday'][0][4]}")
+                    w1delta = (float(weekBreakdownDict['Wednesday'][0][0]) - weekavg_rev)
+                    wedCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Wednesday'][0][0]):.2f}", delta=f"{w1delta:.2f}", delta_color="normal") 
+                    w1diff = (w1delta / weekavg_rev)*100
+                    wedCol.write("##")
+                    wedCol.metric(label="Difference", value=f"{w1diff:.2f}%")
+                    wedCol.image(calc_and_get_metric_impact_img(w1diff), width=80)
+                    wedCol.write("##")
+                elif breakdown_type == "customer spend":
+                    wedCol.markdown(f"{weekBreakdownDict['Wednesday'][0][4]}")
+                    wedCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Wednesday'][0][1]):.2f}") 
+                    wedCol.write("##")
+                elif breakdown_type == "total customers":
+                    wedCol.markdown(f"{weekBreakdownDict['Wednesday'][0][4]}")
+                    wedCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Wednesday'][0][2])}")       
+                    wedCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    wedCol.markdown(f"{weekBreakdownDict['Wednesday'][0][4]}")
+                    wedCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Wednesday'][0][3])}")                            
             except IndexError:
                 wedCol.write("-")
-                wedCol.metric(label="Revenue", value="N/A")
-                wedCol.write("##")
-                wedCol.metric(label="Avg Customer Spend", value="N/A")
-                wedCol.write("##")
-                wedCol.metric(label="Total Customers", value="N/A")     
-                wedCol.write("##")
-                wedCol.metric(label="Coffees Sold", value="N/A")                              
+                if breakdown_type == "store revenue":
+                    wedCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off")
+                    wedCol.write("##")
+                    wedCol.metric(label="Difference", value="N/A") 
+                    wedCol.image("imgs/battery_99.png", width=80)
+                    wedCol.write("##")                
+                elif breakdown_type == "customer spend":
+                    wedCol.metric(label="Avg Customer Spend", value="N/A")
+                    wedCol.write("##")
+                elif breakdown_type == "total customers":
+                    wedCol.metric(label="Total Customers", value="N/A")     
+                    wedCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    wedCol.metric(label="Coffees Sold", value="N/A")    
+
             # Thursday
             thuCol.markdown("##### Thursday")
             try:
-                thuCol.markdown(f"{weekBreakdownDict['Thursday'][0][4]}")
-                thuCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Thursday'][0][0]):.2f}")
-                thuCol.write("##")
-                thuCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Thursday'][0][1]):.2f}")
-                thuCol.write("##")
-                thuCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Thursday'][0][2])}")           
-                thuCol.write("##")
-                thuCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Thursday'][0][3])}")                       
+                if breakdown_type == "store revenue":
+                    thuCol.markdown(f"{weekBreakdownDict['Thursday'][0][4]}")
+                    th1delta = (float(weekBreakdownDict['Thursday'][0][0]) - weekavg_rev)
+                    thuCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Thursday'][0][0]):.2f}", delta=f"{th1delta:.2f}", delta_color="normal")
+                    th1diff = (th1delta / weekavg_rev)*100
+                    thuCol.write("##")
+                    thuCol.metric(label="Difference", value=f"{th1diff:.2f}%")                   
+                    thuCol.image(calc_and_get_metric_impact_img(th1diff), width=80)
+                    thuCol.write("##")
+                elif breakdown_type == "customer spend":
+                    thuCol.markdown(f"{weekBreakdownDict['Thursday'][0][4]}")
+                    thuCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Thursday'][0][1]):.2f}")
+                    thuCol.write("##")
+                elif breakdown_type == "total customers":
+                    thuCol.markdown(f"{weekBreakdownDict['Thursday'][0][4]}")
+                    thuCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Thursday'][0][2])}")           
+                    thuCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    thuCol.markdown(f"{weekBreakdownDict['Thursday'][0][4]}")
+                    thuCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Thursday'][0][3])}")                       
             except IndexError:
                 thuCol.write("-")
-                thuCol.metric(label="Revenue", value="N/A")
-                thuCol.write("##")
-                thuCol.metric(label="Avg Customer Spend", value="N/A")
-                thuCol.write("##")
-                thuCol.metric(label="Total Customers", value="N/A")     
-                thuCol.write("##")
-                thuCol.metric(label="Coffees Sold", value="N/A")                                
+                if breakdown_type == "store revenue":
+                    thuCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off")
+                    thuCol.write("##")
+                    thuCol.metric(label="Difference", value="N/A") 
+                    thuCol.image("imgs/battery_99.png", width=80)
+                    thuCol.write("##")                      
+                elif breakdown_type == "customer spend":
+                    thuCol.metric(label="Avg Customer Spend", value="N/A")
+                    thuCol.write("##")
+                elif breakdown_type == "total customers":
+                    thuCol.metric(label="Total Customers", value="N/A")     
+                    thuCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    thuCol.metric(label="Coffees Sold", value="N/A")        
+
             # Friday
             friCol.markdown("##### Friday")
             try:
-                friCol.markdown(f"{weekBreakdownDict['Friday'][0][4]}")
-                friCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Friday'][0][0]):.2f}")
-                friCol.write("##")
-                friCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Friday'][0][1]):.2f}")
-                friCol.write("##")
-                friCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Friday'][0][2])}")     
-                friCol.write("##")
-                friCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Friday'][0][3])}")                              
+                if breakdown_type == "store revenue":
+                    friCol.markdown(f"{weekBreakdownDict['Friday'][0][4]}")
+                    f1delta = (float(weekBreakdownDict['Friday'][0][0]) - weekavg_rev)
+                    friCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Friday'][0][0]):.2f}", delta=f"{f1delta:.2f}", delta_color="normal")
+                    f1diff = (f1delta / weekavg_rev)*100
+                    friCol.write("##")
+                    friCol.metric(label="Difference", value=f"{f1diff:.2f}%")
+                    friCol.image(calc_and_get_metric_impact_img(f1diff), width=80)
+                    friCol.write("##")
+                elif breakdown_type == "customer spend":
+                    friCol.markdown(f"{weekBreakdownDict['Friday'][0][4]}")
+                    friCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Friday'][0][1]):.2f}")
+                    friCol.write("##")
+                elif breakdown_type == "total customers":
+                    friCol.markdown(f"{weekBreakdownDict['Friday'][0][4]}")
+                    friCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Friday'][0][2])}")     
+                    friCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    friCol.markdown(f"{weekBreakdownDict['Friday'][0][4]}")
+                    friCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Friday'][0][3])}")                              
             except IndexError:
                 friCol.write("-")
-                friCol.metric(label="Revenue", value="N/A")
-                friCol.write("##")
-                friCol.metric(label="Avg Customer Spend", value="N/A")
-                friCol.write("##")
-                friCol.metric(label="Total Customers", value="N/A")                     
-                friCol.write("##")
-                friCol.metric(label="Coffees Sold", value="N/A")                                
+                if breakdown_type == "store revenue":
+                    friCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off")
+                    friCol.write("##")
+                    friCol.metric(label="Difference", value="N/A") 
+                    friCol.image("imgs/battery_99.png", width=80)
+                    friCol.write("##")                      
+                elif breakdown_type == "customer spend":    
+                    friCol.metric(label="Avg Customer Spend", value="N/A")
+                    friCol.write("##")
+                elif breakdown_type == "total customers":
+                    friCol.metric(label="Total Customers", value="N/A")                     
+                    friCol.write("##")
+                elif breakdown_type == "coffee sales":
+                   friCol.metric(label="Coffees Sold", value="N/A")      
+
             # Saturday
             satCol.markdown("##### Saturday")
             try:
-                satCol.markdown(f"{weekBreakdownDict['Saturday'][0][4]}")
-                satCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Saturday'][0][0]):.2f}")
-                satCol.write("##")
-                satCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Saturday'][0][1]):.2f}")
-                satCol.write("##")
-                satCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Saturday'][0][2])}")
-                satCol.write("##")
-                satCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Saturday'][0][3])}")                
+                if breakdown_type == "store revenue":
+                    satCol.markdown(f"{weekBreakdownDict['Saturday'][0][4]}")
+                    sa1delta = (float(weekBreakdownDict['Saturday'][0][0]) - weekavg_rev)
+                    satCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Saturday'][0][0]):.2f}", delta=f"{sa1delta:.2f}", delta_color="normal")
+                    sa1diff = (sa1delta / weekavg_rev)*100
+                    satCol.write("##")
+                    satCol.metric(label="Difference", value=f"{sa1diff:.2f}%")              
+                    satCol.image(calc_and_get_metric_impact_img(sa1diff), width=80)
+                    satCol.write("##")
+                elif breakdown_type == "customer spend":
+                    satCol.markdown(f"{weekBreakdownDict['Saturday'][0][4]}")
+                    satCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Saturday'][0][1]):.2f}")
+                    satCol.write("##")
+                elif breakdown_type == "total customers":
+                    satCol.markdown(f"{weekBreakdownDict['Saturday'][0][4]}")
+                    satCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Saturday'][0][2])}")
+                    satCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    satCol.markdown(f"{weekBreakdownDict['Saturday'][0][4]}")
+                    satCol.metric(label="Coffees Sold", value=f"{int(weekBreakdownDict['Saturday'][0][3])}")                
             except IndexError:
                 satCol.write("-")
-                satCol.metric(label="Revenue", value="N/A")
-                satCol.write("##")
-                satCol.metric(label="Avg Customer Spend", value="N/A")
-                satCol.write("##")
-                satCol.metric(label="Total Customers", value="N/A")       
-                satCol.write("##")
-                satCol.metric(label="Coffees Solid", value="N/A")          
+                if breakdown_type == "store revenue":
+                    satCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off")
+                    satCol.write("##")
+                    satCol.metric(label="Difference", value="N/A") 
+                    satCol.image("imgs/battery_99.png", width=80)
+                    satCol.write("##")                      
+                elif breakdown_type == "customer spend":
+                    satCol.metric(label="Avg Customer Spend", value="N/A")
+                    satCol.write("##")
+                elif breakdown_type == "total customers":
+                    satCol.metric(label="Total Customers", value="N/A")       
+                    satCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    satCol.metric(label="Coffees Solid", value="N/A")        
+
             # Sunday
             sunCol.markdown("##### Sunday")
             try:
-                sunCol.markdown(f"{weekBreakdownDict['Sunday'][0][4]}")
-                sunCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Sunday'][0][0]):.2f}")
-                sunCol.write("##")
-                sunCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Sunday'][0][1]):.2f}")
-                sunCol.write("##")
-                sunCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Sunday'][0][2])}")   
-                sunCol.write("##")
-                sunCol.metric(label="Coffees Solid", value=f"{int(weekBreakdownDict['Sunday'][0][3])}")                              
+                if breakdown_type == "store revenue":
+                    sunCol.markdown(f"{weekBreakdownDict['Sunday'][0][4]}")
+                    su1delta = (float(weekBreakdownDict['Sunday'][0][0]) - weekavg_rev)
+                    sunCol.metric(label="Revenue", value=f"${float(weekBreakdownDict['Sunday'][0][0]):.2f}", delta=f"{su1delta:.2f}", delta_color="normal")
+                    sun1diff = (su1delta / weekavg_rev)*100
+                    sunCol.write("##")
+                    sunCol.metric(label="Difference", value=f"{sun1diff:.2f}%")
+                    sunCol.image(calc_and_get_metric_impact_img(sun1diff), width=80)
+                    sunCol.write("##")
+                elif breakdown_type == "customer spend":
+                    sunCol.markdown(f"{weekBreakdownDict['Sunday'][0][4]}")
+                    sunCol.metric(label="Avg Customer Spend", value=f"${float(weekBreakdownDict['Sunday'][0][1]):.2f}")
+                    sunCol.write("##")
+                elif breakdown_type == "total customers":
+                    sunCol.markdown(f"{weekBreakdownDict['Sunday'][0][4]}")
+                    sunCol.metric(label="Total Customers", value=f"{int(weekBreakdownDict['Sunday'][0][2])}")   
+                    sunCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    sunCol.markdown(f"{weekBreakdownDict['Sunday'][0][4]}")
+                    sunCol.metric(label="Coffees Solid", value=f"{int(weekBreakdownDict['Sunday'][0][3])}")                              
             except IndexError:
                 sunCol.write("-")
-                sunCol.metric(label="Revenue", value="N/A") 
-                sunCol.write("##")
-                sunCol.metric(label="Avg Customer Spend", value="N/A")
-                sunCol.write("##")
-                sunCol.metric(label="Total Customers", value="N/A")           
-                sunCol.write("##")
-                sunCol.metric(label="Coffees Solid", value="N/A")                                        
+                if breakdown_type == "store revenue":
+                    sunCol.metric(label="Revenue", value="N/A", delta="-", delta_color="off") 
+                    sunCol.write("##")
+                    sunCol.metric(label="Difference", value="N/A") 
+                    sunCol.image("imgs/battery_99.png", width=80)
+                    sunCol.write("##")                      
+                elif breakdown_type == "customer spend":
+                    sunCol.metric(label="Avg Customer Spend", value="N/A")
+                    sunCol.write("##")
+                elif breakdown_type == "total customers":
+                    sunCol.metric(label="Total Customers", value="N/A")           
+                    sunCol.write("##")
+                elif breakdown_type == "coffee sales":
+                    sunCol.metric(label="Coffees Solid", value="N/A")                                        
 
             #print(weekBreakdownDict)
 
