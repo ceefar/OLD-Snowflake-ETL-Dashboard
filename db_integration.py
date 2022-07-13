@@ -94,6 +94,10 @@ def get_stores_breakdown_revenue_via_bizi(store_name:str, i_want:str = "alltime"
     - weekofyear = just (unique) week numbers
     - thesedays = like just days, a count of valid days, but between two given dates and only for one store
     - datesavgrevenue = average revenue between two dates
+    - avg cs for dates = average customer spend between dates
+    - avg cs = average customer spend all time
+    - avgcusts = average customers per day all time
+    - avgcups = average coffees sold per day all time
     bizi meaning from biz insights table, potentially may cause slighly less complete data but will do for now
     """
     if i_want == "alltime":
@@ -114,6 +118,18 @@ def get_stores_breakdown_revenue_via_bizi(store_name:str, i_want:str = "alltime"
     elif i_want == "datesavgrevenue":
         avg_rev_for_dates = run_query(f"SELECT SUM(total_revenue_for_day) FROM redshift_bizinsights WHERE store_name = '{store_name}' AND current_day BETWEEN '{somedates[0]}' AND '{somedates[1]}'")
         return(avg_rev_for_dates[0][0])    
+    elif i_want == "avgcsfordates":
+        avgcsfordates = run_query(f"SELECT AVG(avg_spend_per_customer_for_day) FROM redshift_bizinsights WHERE store_name = '{store_name}' AND current_day BETWEEN '{somedates[0]}' AND '{somedates[1]}'")
+        return(avgcsfordates[0][0])
+    elif i_want == "avgcs":
+        avgcs = run_query(f"SELECT AVG(avg_spend_per_customer_for_day) FROM redshift_bizinsights WHERE store_name = '{store_name}'")
+        return(avgcs[0][0])
+    elif i_want == "avgcusts":
+        avgcusts = run_query(f"SELECT AVG(total_customers_for_day) FROM redshift_bizinsights WHERE store_name = '{store_name}'")
+        return(avgcusts[0][0])        
+    elif i_want == "avgcups":
+        avgcups = run_query(f"SELECT AVG(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE store_name = '{store_name}'")
+        return(avgcups[0][0])        
     else:
         return(0)
     

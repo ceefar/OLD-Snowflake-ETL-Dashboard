@@ -450,7 +450,7 @@ def run():
             _, compareMetInfoCol1, compareMetInfoCol2, compareMetInfoCol3, _ = st.columns(5)
             st.write("##")
             with compareMetInfoCol1:
-                st.metric(label=f"Days Difference", value=f"{diff_between_dates}", delta="inclusive", delta_color="off")
+                st.metric(label=f"Days Difference", value=f"{diff_between_dates}", delta="Inclusive", delta_color="off")
                 st.write("---")
             with compareMetInfoCol2:
                 st.metric(label=f"Days Available", value=f"{just_selected_days_for_store}", delta=availability_delta, delta_color="normal")
@@ -470,22 +470,52 @@ def run():
 
             avgrev_in_selected_dates_for_store = db.get_stores_breakdown_revenue_via_bizi(store_selector, "datesavgrevenue", (user_start_date, user_end_date))
             avgrev_in_selected_dates_for_store = (avgrev_in_selected_dates_for_store / diff_between_dates)
+            avg_daily_customers_for_store = int(metric2_tot_cust_val / diff_between_dates) # could just put avg in query above instead of sum lmao but whatever
+            avg_daily_drinks_sold_for_store = int(metric2_tot_cofs_val / diff_between_dates)
             # for the metric delta
-            prev_avgrev_for_store_alltime = (store_alltime_rev / datadays_for_store)
+            avgrev_for_store_alltime = (store_alltime_rev / datadays_for_store)
+            avg_cs_for_store_alltime = db.get_stores_breakdown_revenue_via_bizi(store_selector, "avgcs", (user_start_date, user_end_date))     
+            avg_daily_customers_for_store_all_time = int(db.get_stores_breakdown_revenue_via_bizi(store_selector, "avgcusts", (user_start_date, user_end_date)))
+            avg_daily_drinks_for_store_all_time = int(db.get_stores_breakdown_revenue_via_bizi(store_selector, "avgcups", (user_start_date, user_end_date)))
             # for 2nd metric aka delta detail/difference
-            avg_rev_delta_detail = avgrev_in_selected_dates_for_store - prev_avgrev_for_store_alltime
+            avg_rev_delta_detail = avgrev_in_selected_dates_for_store - avgrev_for_store_alltime
+            avg_cs_delta_detail = metric2_avg_spend_val - float(avg_cs_for_store_alltime)
+            avg_daily_cust_delta_detail = avg_daily_customers_for_store - int(avg_daily_customers_for_store_all_time)
+            avg_daily_cups_delta_detail = avg_daily_drinks_sold_for_store - int(avg_daily_drinks_for_store_all_time)
+
+
 
             # ---- Average Stats ----
 
             #TODO - ANOTHER DICTIONARY TEXT THING FOR DELTA DETAIL/DIFFERENCE HERE WOULD BE AWESOME 
             st.write(f"Average Stats for {store_selector}")
             metric3Col1, metric3Col2, metric3Col3, metric3Col4 = st.columns(4)
-            metric3Col1.metric(label="Avg Revenue", value=f"${avgrev_in_selected_dates_for_store:.2f}", delta=f"${prev_avgrev_for_store_alltime:.2f}", delta_color="normal")
-            metric3Col1.metric(label="Difference", value=f"${avg_rev_delta_detail:.2f}")
-            metric3Col2.metric(label="Avg Spend", value=metric2_avg_spend_val, delta=f"${metric_avg_spend_val:.2f}", delta_color="normal")
-            metric3Col3.metric(label="Avg Daily Customers", value=1, delta=1, delta_color="normal")
-            metric3Col4.metric(label="Avg Coffees Sold", value=1, delta=1, delta_color="normal")
 
+            def delta_colour_setter(value, delta):
+                """ set the delta colour based on the difference between value and delta """
+                if value >= delta:
+                    return("normal")
+                elif delta > value:
+                    return("inverse")
+                else:
+                    return("off")
+
+            # im such an idiot, obvs what you were thinking was the difference being in delta and then the previous being below but w/e is fine like this for presenting tomo
+            # FIXME for own project tho 
+            # also note is a lot of repetition of calls that need to avoid as much as is possible
+
+            # average revenue
+            metric3Col1.metric(label="Avg Revenue", value=f"${avgrev_in_selected_dates_for_store:.2f}", delta=f"{avgrev_for_store_alltime:.2f}", delta_color=delta_colour_setter(avgrev_in_selected_dates_for_store, avgrev_for_store_alltime))
+            metric3Col1.metric(label="Difference", value=f"${avg_rev_delta_detail:.2f}")
+            # average customer spend
+            metric3Col2.metric(label="Avg Customer Spend", value=f"${metric2_avg_spend_val:.2f}", delta=f"{avg_cs_for_store_alltime:.2f}", delta_color=delta_colour_setter(metric2_avg_spend_val, avg_cs_for_store_alltime))
+            metric3Col2.metric(label="Difference", value=f"${avg_cs_delta_detail:.2f}")
+            # average daily customers
+            metric3Col3.metric(label="Avg Daily Customers", value=avg_daily_customers_for_store, delta=avg_daily_customers_for_store_all_time, delta_color=delta_colour_setter(avg_daily_customers_for_store, avg_daily_customers_for_store_all_time))
+            metric3Col3.metric(label="Difference", value=avg_daily_cust_delta_detail)
+            # average daily drinks sold
+            metric3Col4.metric(label="Avg Daily Drinks Sold", value=avg_daily_drinks_sold_for_store, delta=avg_daily_drinks_for_store_all_time, delta_color=delta_colour_setter(avg_daily_drinks_sold_for_store, avg_daily_drinks_for_store_all_time))
+            metric3Col4.metric(label="Difference", value=avg_daily_cups_delta_detail)
             st.write("##")
             st.write(f"Delta Values are All Time Averages for {store_selector}")
 
