@@ -155,9 +155,9 @@ def run():
 
     # STORE MENUS artist
     with st.container():
-        st.write(f"### :bulb: Title") 
-        st.write("##### Subtitle")
-        st.write("Short blurb text") # because they are all favoured so really theres 15 not 3
+        st.write(f"### :coffee: Configure Store Menus") 
+        st.write("##### Time Saving Functionality")
+        st.write("Grab store menus for the day based on item availability") # because they are all favoured so really theres 15 not 3
         st.write("##")
         
         # store selector
@@ -174,10 +174,8 @@ def run():
         # for adding checkboxes next to menu items, 2 column display (so matches the menu print out for visual clarity)
         menuitemCol1, itemcheckboxCol1, _, menuitemCol2, itemcheckboxCol2 = st.columns([2,1,1,2,1])
 
-        
 
         #FIXME : This will look sooo much better if the image is on the right of the checkboxes duh
-
 
 
         if devmode2:
@@ -242,12 +240,23 @@ def run():
         st.write("---") 
         st.write("##")
 
-        st.markdown("#### Your Menu Image")
-        st.write("##")
+        menuCol1, menuCol2 = st.columns([1,2])
+        menuCol1.markdown("#### Your Menu Image")
+        menuCol1.write("##")
 
         # create and print the image to web app, format of filename = menu_StoreName.png, filepath = imgs/ 
         store_menu_img = arty.draw_dynamic_store_menu(f"{store_selector}.png", final_menu, store_selector)
-        st.image(store_menu_img)
+        menuCol1.image(store_menu_img)
+        menuCol2.write("##")
+        menuCol2.write("##")
+        menuCol2.write("##")
+        menuCol2.button("Upload To Facebook")
+        menuCol2.button("Upload To Instagram")
+        menuCol2.button("Upload To Twitter")
+        menuCol2.button("Upload To WhatsApp")
+        menuCol2.button("Upload To LinkedIn")
+        menuCol2.button("Upload To Snapchat")
+        menuCol2.button("Upload To Pinterest")
         
         if devmode2:
             st.write("##")
