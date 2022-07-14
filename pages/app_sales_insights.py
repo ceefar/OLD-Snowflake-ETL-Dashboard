@@ -146,16 +146,23 @@ def run():
 
         # FIXME
         # BUG - longridge 05/07 zero division error
-        average_hourcups = sum(results_dict.values()) / len(results_dict.values())
+        try:
+            average_hourcups = sum(results_dict.values()) / len(results_dict.values())
+        except ZeroDivisionError:
+            average_hourcups = 0
 
         # create a new dictionary from hour/cups dictionary but sorted
         sort_by_value = dict(sorted(results_dict.items(), key=lambda x: x[1]))   
         # create a list of formatted strings with times and cups sold including am or pm based on the time
         sort_by_value_formatted_list = list(map(lambda x: (f"{x[0]}pm [{x[1]} cups sold]") if x[0] > 11 else (f"{x[0]}am [{x[1]} cups sold]"), sort_by_value.items()))
+        
 
-        # list the keys (times, ordered) only, slice the first and last elements in the array (list) [start:stop:step]
-        worst_time, best_time = list(sort_by_value.keys())[::len(sort_by_value.keys())-1]
-        worst_performer, best_performer = sort_by_value_formatted_list[::len(sort_by_value_formatted_list)-1]
+        try:
+            # list the keys (times, ordered) only, slice the first and last elements in the array (list) [start:stop:step]
+            worst_time, best_time = list(sort_by_value.keys())[::len(sort_by_value.keys())-1]
+            worst_performer, best_performer = sort_by_value_formatted_list[::len(sort_by_value_formatted_list)-1]
+        except ValueError:
+            worst_time, best_time, worst_performer, best_performer = 0,0,0,0
 
         # TO ADD HERE
         # print(f"{average_hourcups = }") # HOURS UNDER THIS TIME COULD POSSIBLY BENEFIT FROM AN OFFER, HOURS ABOVE IS STAFF
@@ -188,8 +195,8 @@ def run():
             At {worst_time}{f"{'pm' if worst_time > 11 else 'am'}"} consider offers + less staff\n
             ###### Best Performing Hour: {best_performer}\n
             At {best_time}{f"{'pm' if best_time > 11 else 'am'}"} ensure staff numbers with strong workers at this time to maximise sales\n
-            ###### TO DO ASAP...\n
-            Average Sales Per Hour: {average_hourcups:.2f} cups sold\n
+            ###### Sales Analysis\n
+            Average Sales Per Hour: {average_hourcups:.0f} cups sold\n
             Hours Above Average Sales: {", ".join(list(map(lambda x : f"{x}pm" if x > 11 else f"{x}am" , list(above_avg_hourcups.keys()))))} 
             """
 
@@ -210,7 +217,7 @@ def run():
                     current_store = "-".join(current_store)
                 insightCol1.image(f"imgs/cshop-small-{current_store}.png") # width=140
         else:
-            altairChartCol1, altairChartCol2 = st.columns([2,2])
+            _, altairChartCol1, altairChartCol2 = st.columns([1,3,2])
             try:
                 altairChartCol2.image("imgs/Missingno.png")
             except FileNotFoundError:
@@ -753,10 +760,14 @@ def run():
         # obvs as above compare example can be done by extending lists into 1 field
         # but logic still good so straight ported over and tweaked
 
+        # need to update this so time of day is a string (actual word)
+        # since these are tuples won't be straightforward
+
         breakfast_sales = db.get_cups_sold_by_time_of_day(1)
         earlylunch_sales = db.get_cups_sold_by_time_of_day(2)
         latelunch_sales = db.get_cups_sold_by_time_of_day(3)
         afternoon_sales = db.get_cups_sold_by_time_of_day(4)
+        
 
         ChaiLatte_Breaky = breakfast_sales[0]
         Cortado_Breaky = breakfast_sales[1]

@@ -269,7 +269,7 @@ def run():
 
         show_metric = True
 
-        metricErrorCol1, metricErrorCol2 = st.columns([2,1])
+        _, metricErrorCol1, metricErrorCol2 = st.columns([1,3,2])
         if metricDeltaResults[0] == 0 and metricValueResults[0] == 0:
             metricErrorCol1.error(METRIC_ERROR.format(selected_stores_display, f"{day_before} OR {dateme}", "no selected or previous day available"))
             try:
