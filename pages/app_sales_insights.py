@@ -144,8 +144,6 @@ def run():
             cupForHour = source4.loc[source4['HourOfDay'] == value, 'CupsSold'].sum()
             results_dict[value] = cupForHour
 
-        # FIXME
-        # BUG - longridge 05/07 zero division error
         try:
             average_hourcups = sum(results_dict.values()) / len(results_dict.values())
         except ZeroDivisionError:
@@ -200,10 +198,6 @@ def run():
             Hours Above Average Sales: {", ".join(list(map(lambda x : f"{x}pm" if x > 11 else f"{x}am" , list(above_avg_hourcups.keys()))))} 
             """
 
-
-        # TODO - SEE THE "TO DO ASAP" TEXT ABOVE, MINOR AF BUT STILL GOTTA FINISH OFF THIS INSIGHTS STUFF (and maybe not whatelse would/could do) 
-        # FIXME 
-        # BUG 
         # if no data returned for store and day then show missingno (missing number) error
         if hour_cups_data:
             st.altair_chart(bar_chart4 + text4, use_container_width=True)
@@ -494,10 +488,6 @@ def run():
         # try between 2 dates for advanced mode
 
 
-        # TODO 
-        # FIXME 
-        # BUG - HUGE BUG THE NONE ISSUE NOW - which is fine tbf as i expected but still 100% need to do - see camden i think
-
 
         if advanced_options_1:
             # needed for assignment error (will be written again but meh)
@@ -768,7 +758,6 @@ def run():
         latelunch_sales = db.get_cups_sold_by_time_of_day(3)
         afternoon_sales = db.get_cups_sold_by_time_of_day(4)
         
-
         ChaiLatte_Breaky = breakfast_sales[0]
         Cortado_Breaky = breakfast_sales[1]
         Espresso_Breaky = breakfast_sales[2]
@@ -841,14 +830,17 @@ def run():
         Smoothies_Afternoon = afternoon_sales[15]
         SpecialityTea_Afternoon = afternoon_sales[16] #####
 
-
         # like what dates is this, proper info on why no flavours, general info, etc etc
 
         # least popular as no flavours duh (make this clear)
-        st.write("#### Less Popular - All Days - All Stores - Volume Sold (Popularity)") # time of day popularity or sumnt?
-        st.write("Consider removing the least popular products (lowest volume) for new ones, particularly if profit margins are small")
+        st.write("### Item Popularity (Volume Sold)") # time of day popularity or sumnt?
+        st.write("##### All Days - All Stores - Not Core Items")
+        st.write("Includes all items except the top 3 products for greater readability and analysis")
+        st.write("Consider removing the least popular/lowest volume products for newer ones/trending products, particularly if profit margins are small")
         st.write("##")
 
+        
+        
         source6 = pd.DataFrame({
         "CoffeeType": [FlatWhite_Breaky[1], FlatWhite_Lunch[1],FlatWhite_LateLunch[1],FlatWhite_Afternoon[1],
                         Latte_Breaky[1], Latte_Lunch[1],Latte_LateLunch[1],Latte_Afternoon[1],
@@ -914,8 +906,17 @@ def run():
 
         st.altair_chart(bar_chart6 + text6, use_container_width=True)
 
-
-
+        afternoon_best_sales = max(afternoon_sales)
+        afternoon_worst_sales = min(afternoon_sales)
+        latelunch_sales_best_sales = max(afternoon_sales)
+        latelunch_sales_worst_sales = min(afternoon_sales)
+        earlylunch_sales_best_sales = max(afternoon_sales)
+        earlylunch_sales_worst_sales = min(afternoon_sales)
+        breakfast_sales_best_sales = max(afternoon_sales)
+        breakfast_sales_worst_sales = min(afternoon_sales)                        
+        all_times_combined_sales = afternoon_sales + latelunch_sales + earlylunch_sales + breakfast_sales
+        all_times_combined_best_sales = max(all_times_combined_sales)
+        all_times_combined_worst_sales = min(all_times_combined_sales)
 
 run()
 
