@@ -918,6 +918,24 @@ def run():
         all_times_combined_best_sales = max(all_times_combined_sales)
         all_times_combined_worst_sales = min(all_times_combined_sales)
 
+        ToDcol1, ToDcol2, ToDcol3 = st.columns(3)
+
+        # N0TE THE DELTA SHOULD BE AN AVERAGE DUH!
+        # as in combining all times together (so the top top or the worst worst, not like an average - tho do want an avg?)
+        combined_best_name, combined_best_count = all_times_combined_best_sales[1], all_times_combined_best_sales[0]
+        combined_worst_name, combined_worst_count = all_times_combined_worst_sales[1], all_times_combined_worst_sales[0]
+        break_best_name, break_best_count = breakfast_sales_best_sales[1], breakfast_sales_best_sales[0]
+        break_worst_name, break_worst_count = breakfast_sales_worst_sales[1], breakfast_sales_worst_sales[0]
+
+        with ToDcol1:
+            ToDselect = st.radio(label="Time Of Day", options=["Breakfast","Late Lunch","Early Lunch","Afternoon","All Combined"])
+        
+        if ToDselect == "Breakfast":
+            ToDcol2.write("Best Sales")
+            ToDcol2.metric(label=break_best_name, value=break_best_count, delta=1, delta_color="normal")
+            ToDcol3.write("Worst Sales")
+            ToDcol3.metric(label=break_worst_name, value=break_worst_count, delta=1, delta_color="normal")
+
 run()
 
 
