@@ -34,6 +34,15 @@ def run_query(query):
         return cur.fetchall()
 
 
+#def init_setup():
+#    run_query("ALTER SESSION SET timestamp_output_format = 'YYYY-MM-DD HH24:MI:SS.FF'")
+#    run_query("ALTER SESSION SET TIMEZONE = 'Europe/London'")
+
+
+
+
+
+
 # ---- general query functions ----
 
 # generally expected to be used in multiple pages/modules

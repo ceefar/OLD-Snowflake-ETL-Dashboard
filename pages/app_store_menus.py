@@ -264,7 +264,6 @@ def run():
                 st.write("Partial Code From My External Module Artist.py, Which Uses PIL (pillow)")
                 st.code(ARTIST_1, language="python")
             
-
         st.write("##")
         st.write("---") 
 
@@ -276,6 +275,6 @@ def run():
 
 
 
-
-
 run()
+# UPTIME function
+#db.keepy_uppy()

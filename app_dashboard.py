@@ -30,18 +30,22 @@ import PIL
 import artist as arty
 
 
-# ---- page setup ----
+# ---- on load / page setup ----
 
-# set page config needs to be the first streamlit action that is run for it to work, sets the layout default to wide
+# should this be cached or memoised?
 def on_load():
+    """
+    set page config needs to be the first streamlit action that is run for it to work, sets the layout default to wide,
+    also testing uptime functionality within this function
+    """
+    # potential bug that it sometimes doesn't do this first time round but does when you click a page again (consider re-run to force?)
     st.set_page_config(layout="wide")
 
-# catch error in case that file is reloaded locally so app thinks config hasn't run first
+# catch error in case that file is reloaded locally meaning app thinks config hasn't run first when it has
 try: 
     on_load()
 except StreamlitAPIException:
     pass
- 
 
 # ---- db connection ----
 
@@ -59,7 +63,7 @@ def run_query(query):
 
 # ---- functions ----
 
-def split_metric_eafp(results:tuple, vals_or_delta:str) -> list: # big type hint enjoyer btw
+def split_metric_eafp(results:tuple, vals_or_delta:str) -> list: # im a big type hint enjoyer btw
     """
     creates list of query results for the metric values and delta, 
     saves doing a massive switch case since try excepts are needed to set either value or 0
@@ -93,6 +97,41 @@ def split_metric_eafp(results:tuple, vals_or_delta:str) -> list: # big type hint
         return(values_result)
 
 
+def delta_colour_setter(value, delta):
+    """ set the delta colour based on the difference between value and delta """
+    if value >= delta:
+        return("normal")
+    elif delta > value:
+        return("inverse")
+    else:
+        return("off")
+
+
+def calculate_availability_delta_info(available_percent:int):
+    """ takes a percentage (of data availability) and returns text for st.metric delta for the acceptability of the availability """
+    # use a dictionary to store the scores and output string
+    score_dict = {30:"-bad",50:"-poor",65:"acceptable",80:"good",95:"excellent",100:"exceptional"}
+    # use built in min function with key parameter lambda which uses the absolute value
+    score_int = min(score_dict, key=lambda x:abs(x-available_percent))
+    score_delta = score_dict[score_int]
+    return(score_delta.title())
+
+
+# ---- html/css components ----
+
+VS_IMG_HTML = """
+<style>
+.center {{
+display: block;
+margin-left: auto;
+margin-right: auto;
+padding-top: 10px;
+padding-right: 30px;
+filter: sepia(50%) opacity(70%)
+}}
+</style>
+<img src="https://upload.wikimedia.org/wikipedia/commons/7/70/Street_Fighter_VS_logo.png" alt="Paris" height="100px" class="center">
+"""
 
 
 # ---- main web app ----
@@ -395,20 +434,23 @@ def run():
         st.write("##")
 
 
+    # ---- NEW SECTION ----
+
         # ---- ANALYSIS TOGGLE ----
         
-        _, userCompareCol, _ = st.columns([2,2,2])
+        # note the slight left offest in userCompareCol && radioCol is to centralise things better - v1.10
+        # as of streamlit v1.11 (15/7) columns now supports gap keyword for spacing, lets try it out
+        _, userCompareCol, _ = st.columns([3,2,2])
         with userCompareCol:
             st.image(store_img_display(True,store_selector))
             st.markdown(f"### {store_selector}")
             st.write("Choose Analysis Type")
-        _, radioCol, _ = st.columns([1,3,1])
+        _, radioCol, _ = st.columns([3,5,2])
         with radioCol:
             userCompareSelect = st.radio(label=" ", options=["Days of The Week", "Compare Between Dates", "Store vs Store"], horizontal=True)
             st.write("##")
             st.write("##")
 
-        
 
         # ---- COMPARE 2 DATES ----
         if userCompareSelect == "Compare Between Dates":
@@ -417,140 +459,144 @@ def run():
             with dashboardRevDate1:
                 user_start_date = st.date_input("What Start Date?", datetime.date(2022, 7, 1), max_value=yesterdate, min_value=firstdate, key="dashrevdate1")  
             with dashboardRevDate2:
-                user_end_date = st.date_input("What End Date?", datetime.date(2022, 7, 5), max_value=yesterdate, min_value=firstdate, key="dashrevdate2") 
+                user_end_date = st.date_input("What End Date?", datetime.date(2022, 7, 13), max_value=yesterdate, min_value=firstdate, key="dashrevdate2") 
                 
-
-
             st.write("##")
 
-            #TODO - function if start date after end date (and else validation) -> ! skip validate part for now tho !
-            # duh just grab month and day if one bigger than the other bosh (obvs check month first then if same check days)
+            if user_start_date.strftime('%j') > user_end_date.strftime('%j'):
+                st.error("Start date is after the end date!")
+            else:
+
+                # is inclusive of both dates
+                just_selected_days_for_store = db.get_stores_breakdown_revenue_via_bizi(store_selector, "thesedays", (user_start_date, user_end_date))
+
+                diff_between_dates = run_query(f"SELECT DATEDIFF(day,'{user_start_date}','{user_end_date}')")
+                # is exclusive while the "these days" query above is inclusive so +1 day to the result
+                diff_between_dates = (diff_between_dates[0][0]) + 1
+                
+                availability_percent = ((just_selected_days_for_store/diff_between_dates)*100)   
+                availability_delta = calculate_availability_delta_info(availability_percent) 
+
+                _, compareMetInfoCol1, compareMetInfoCol2, compareMetInfoCol3, _ = st.columns(5)
+                st.write("##")
+                with compareMetInfoCol1:
+                    st.metric(label=f"Days Difference", value=f"{diff_between_dates}", delta="Inclusive", delta_color="off")
+                    st.write("---")
+                with compareMetInfoCol2:
+                    st.metric(label=f"Days Available", value=f"{just_selected_days_for_store}", delta=availability_delta, delta_color="normal")
+                    st.write("---")
+                with compareMetInfoCol3:
+                    st.metric(label=f"Availability", value=f"{availability_percent:.2f}%", delta=availability_delta, delta_color="normal") 
+                    st.write("---")               
 
 
-            # is inclusive of both dates
-            just_selected_days_for_store = db.get_stores_breakdown_revenue_via_bizi(store_selector, "thesedays", (user_start_date, user_end_date))
+                # ---- Store Metric Queries & Vars ----
 
-            # should place outside run but is just handy to see it for now
-            def calculate_availability_delta_info(available_percent:int):
-                """ takes a percentage (of data availability) and returns text for st.metric delta for the acceptability of the availability """
-                # use a dictionary to store the scores and output string
-                score_dict = {30:"-bad",50:"-poor",65:"acceptable",80:"good",95:"excellent",100:"exceptional"}
-                # use built in min function with key parameter lambda which uses the absolute value
-                score_int = min(score_dict, key=lambda x:abs(x-available_percent))
-                score_delta = score_dict[score_int]
-                return(score_delta.title())
+                metric2Val = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
+                                        SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day BETWEEN '{user_start_date}' AND '{user_end_date}' AND store_name = '{store_selector}';")
 
-            diff_between_dates = run_query(f"SELECT DATEDIFF(day,'{user_start_date}','{user_end_date}')")
-            # is exclusive while the "these days" query above is inclusive so +1 day to the result
-            diff_between_dates = (diff_between_dates[0][0]) + 1
-            
-            availability_percent = ((just_selected_days_for_store/diff_between_dates)*100)   
-            availability_delta = calculate_availability_delta_info(availability_percent) 
+                metric2ValResults = split_metric_eafp(metric2Val[0], "vals")
+                metric2_tot_rev_val, metric2_avg_spend_val, metric2_tot_cust_val, metric2_tot_cofs_val = float(metric2ValResults[0]), float(metric2ValResults[1]), metric2ValResults[2], metric2ValResults[3]
 
-            _, compareMetInfoCol1, compareMetInfoCol2, compareMetInfoCol3, _ = st.columns(5)
-            st.write("##")
-            with compareMetInfoCol1:
-                st.metric(label=f"Days Difference", value=f"{diff_between_dates}", delta="Inclusive", delta_color="off")
+                avgrev_in_selected_dates_for_store = db.get_stores_breakdown_revenue_via_bizi(store_selector, "datesavgrevenue", (user_start_date, user_end_date))
+                avgrev_in_selected_dates_for_store = (avgrev_in_selected_dates_for_store / diff_between_dates)
+                avg_daily_customers_for_store = int(metric2_tot_cust_val / diff_between_dates) # could just put avg in query above instead of sum lmao but whatever
+                avg_daily_drinks_sold_for_store = int(metric2_tot_cofs_val / diff_between_dates)
+                # for the metric delta
+                avgrev_for_store_alltime = (store_alltime_rev / datadays_for_store)
+                avg_cs_for_store_alltime = db.get_stores_breakdown_revenue_via_bizi(store_selector, "avgcs", (user_start_date, user_end_date))     
+                avg_daily_customers_for_store_all_time = int(db.get_stores_breakdown_revenue_via_bizi(store_selector, "avgcusts", (user_start_date, user_end_date)))
+                avg_daily_drinks_for_store_all_time = int(db.get_stores_breakdown_revenue_via_bizi(store_selector, "avgcups", (user_start_date, user_end_date)))
+                # for 2nd metric aka delta detail/difference
+                avg_rev_delta_detail = avgrev_in_selected_dates_for_store - avgrev_for_store_alltime
+                avg_cs_delta_detail = metric2_avg_spend_val - float(avg_cs_for_store_alltime)
+                avg_daily_cust_delta_detail = avg_daily_customers_for_store - int(avg_daily_customers_for_store_all_time)
+                avg_daily_cups_delta_detail = avg_daily_drinks_sold_for_store - int(avg_daily_drinks_for_store_all_time)
+
+
+                # ---- Average Stats ----
+
+                #TODO - ANOTHER DICTIONARY TEXT THING FOR DELTA DETAIL/DIFFERENCE HERE WOULD BE AWESOME 
+                st.write(f"Average Stats for {store_selector}")
+                metric3Col1, metric3Col2, metric3Col3, metric3Col4 = st.columns(4)
+
+                # im such an idiot, obvs what you were thinking was the difference being in delta and then the previous being below but w/e is fine like this for presenting tomo
+                # FIXME for own project tho 
+                # also note is a lot of repetition of calls that need to avoid as much as is possible
+
+                # average revenue
+                metric3Col1.metric(label="Avg Revenue", value=f"${avgrev_in_selected_dates_for_store:.2f}", delta=f"{avgrev_for_store_alltime:.2f}", delta_color=delta_colour_setter(avgrev_in_selected_dates_for_store, avgrev_for_store_alltime))
+                metric3Col1.metric(label="Difference", value=f"${avg_rev_delta_detail:.2f}")
+                # average customer spend
+                metric3Col2.metric(label="Avg Customer Spend", value=f"${metric2_avg_spend_val:.2f}", delta=f"{avg_cs_for_store_alltime:.2f}", delta_color=delta_colour_setter(metric2_avg_spend_val, avg_cs_for_store_alltime))
+                metric3Col2.metric(label="Difference", value=f"${avg_cs_delta_detail:.2f}")
+                # average daily customers
+                metric3Col3.metric(label="Avg Daily Customers", value=avg_daily_customers_for_store, delta=avg_daily_customers_for_store_all_time, delta_color=delta_colour_setter(avg_daily_customers_for_store, avg_daily_customers_for_store_all_time))
+                metric3Col3.metric(label="Difference", value=avg_daily_cust_delta_detail)
+                # average daily drinks sold
+                metric3Col4.metric(label="Avg Daily Drinks Sold", value=avg_daily_drinks_sold_for_store, delta=avg_daily_drinks_for_store_all_time, delta_color=delta_colour_setter(avg_daily_drinks_sold_for_store, avg_daily_drinks_for_store_all_time))
+                metric3Col4.metric(label="Difference", value=avg_daily_cups_delta_detail)
+                st.write("##")
+                st.write(f"Delta Values are All Time Averages for {store_selector}")
+
+                st.write("##")
                 st.write("---")
-            with compareMetInfoCol2:
-                st.metric(label=f"Days Available", value=f"{just_selected_days_for_store}", delta=availability_delta, delta_color="normal")
-                st.write("---")
-            with compareMetInfoCol3:
-                st.metric(label=f"Availability", value=f"{availability_percent:.2f}%", delta=availability_delta, delta_color="normal") 
-                st.write("---")               
+
+                # ---- General Stats ----
+
+                st.write(f"General Stats for {store_selector}")
+                metric2Col1, metric2Col3, metric2Col4 = st.columns(3)
+                metric2Col1.metric(label="Total Revenue", value = metric2_tot_rev_val, delta=f"${metric_tot_rev_val:.2f}", delta_color="off")
+                metric2Col3.metric(label="Total Customers", value = metric2_tot_cust_val, delta=metric_tot_cust_val, delta_color="off") 
+                metric2Col4.metric(label="Total Coffees Sold", value = metric2_tot_cofs_val, delta=metric_tot_cofs_val, delta_color="off")
+
+                st.write("##")
+                st.write(f"Delta Values are All Time Stats for {store_selector}")                
 
 
-            # ---- Store Metric Queries & Vars ----
+    # ---- NEW SECTION ----
 
-            metric2Val = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
-                                    SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE current_day BETWEEN '{user_start_date}' AND '{user_end_date}' AND store_name = '{store_selector}';")
-
-            metric2ValResults = split_metric_eafp(metric2Val[0], "vals")
-            metric2_tot_rev_val, metric2_avg_spend_val, metric2_tot_cust_val, metric2_tot_cofs_val = float(metric2ValResults[0]), float(metric2ValResults[1]), metric2ValResults[2], metric2ValResults[3]
-
-            avgrev_in_selected_dates_for_store = db.get_stores_breakdown_revenue_via_bizi(store_selector, "datesavgrevenue", (user_start_date, user_end_date))
-            avgrev_in_selected_dates_for_store = (avgrev_in_selected_dates_for_store / diff_between_dates)
-            avg_daily_customers_for_store = int(metric2_tot_cust_val / diff_between_dates) # could just put avg in query above instead of sum lmao but whatever
-            avg_daily_drinks_sold_for_store = int(metric2_tot_cofs_val / diff_between_dates)
-            # for the metric delta
-            avgrev_for_store_alltime = (store_alltime_rev / datadays_for_store)
-            avg_cs_for_store_alltime = db.get_stores_breakdown_revenue_via_bizi(store_selector, "avgcs", (user_start_date, user_end_date))     
-            avg_daily_customers_for_store_all_time = int(db.get_stores_breakdown_revenue_via_bizi(store_selector, "avgcusts", (user_start_date, user_end_date)))
-            avg_daily_drinks_for_store_all_time = int(db.get_stores_breakdown_revenue_via_bizi(store_selector, "avgcups", (user_start_date, user_end_date)))
-            # for 2nd metric aka delta detail/difference
-            avg_rev_delta_detail = avgrev_in_selected_dates_for_store - avgrev_for_store_alltime
-            avg_cs_delta_detail = metric2_avg_spend_val - float(avg_cs_for_store_alltime)
-            avg_daily_cust_delta_detail = avg_daily_customers_for_store - int(avg_daily_customers_for_store_all_time)
-            avg_daily_cups_delta_detail = avg_daily_drinks_sold_for_store - int(avg_daily_drinks_for_store_all_time)
-
-
-
-            # ---- Average Stats ----
-
-            #TODO - ANOTHER DICTIONARY TEXT THING FOR DELTA DETAIL/DIFFERENCE HERE WOULD BE AWESOME 
-            st.write(f"Average Stats for {store_selector}")
-            metric3Col1, metric3Col2, metric3Col3, metric3Col4 = st.columns(4)
-
-            def delta_colour_setter(value, delta):
-                """ set the delta colour based on the difference between value and delta """
-                if value >= delta:
-                    return("normal")
-                elif delta > value:
-                    return("inverse")
-                else:
-                    return("off")
-
-            # im such an idiot, obvs what you were thinking was the difference being in delta and then the previous being below but w/e is fine like this for presenting tomo
-            # FIXME for own project tho 
-            # also note is a lot of repetition of calls that need to avoid as much as is possible
-
-            # average revenue
-            metric3Col1.metric(label="Avg Revenue", value=f"${avgrev_in_selected_dates_for_store:.2f}", delta=f"{avgrev_for_store_alltime:.2f}", delta_color=delta_colour_setter(avgrev_in_selected_dates_for_store, avgrev_for_store_alltime))
-            metric3Col1.metric(label="Difference", value=f"${avg_rev_delta_detail:.2f}")
-            # average customer spend
-            metric3Col2.metric(label="Avg Customer Spend", value=f"${metric2_avg_spend_val:.2f}", delta=f"{avg_cs_for_store_alltime:.2f}", delta_color=delta_colour_setter(metric2_avg_spend_val, avg_cs_for_store_alltime))
-            metric3Col2.metric(label="Difference", value=f"${avg_cs_delta_detail:.2f}")
-            # average daily customers
-            metric3Col3.metric(label="Avg Daily Customers", value=avg_daily_customers_for_store, delta=avg_daily_customers_for_store_all_time, delta_color=delta_colour_setter(avg_daily_customers_for_store, avg_daily_customers_for_store_all_time))
-            metric3Col3.metric(label="Difference", value=avg_daily_cust_delta_detail)
-            # average daily drinks sold
-            metric3Col4.metric(label="Avg Daily Drinks Sold", value=avg_daily_drinks_sold_for_store, delta=avg_daily_drinks_for_store_all_time, delta_color=delta_colour_setter(avg_daily_drinks_sold_for_store, avg_daily_drinks_for_store_all_time))
-            metric3Col4.metric(label="Difference", value=avg_daily_cups_delta_detail)
-            st.write("##")
-            st.write(f"Delta Values are All Time Averages for {store_selector}")
+        # ---- Compare 2 Stores ----
+        if userCompareSelect == "Store vs Store":             
 
             st.write("##")
-            st.write("---")
 
-            # ---- General Stats ----
+            # store select
 
-           
-            st.write(f"General Stats for {store_selector}")
-            metric2Col1, metric2Col3, metric2Col4 = st.columns(3)
-            metric2Col1.metric(label="Total Revenue", value = metric2_tot_rev_val, delta=f"${metric_tot_rev_val:.2f}", delta_color="off")
-            metric2Col3.metric(label="Total Customers", value = metric2_tot_cust_val, delta=metric_tot_cust_val, delta_color="off") 
-            metric2Col4.metric(label="Total Coffees Sold", value = metric2_tot_cofs_val, delta=metric_tot_cofs_val, delta_color="off")
+            vsTopCol1A, vsTopCol1 , vsTopCol2, vsTopCol3, vsTopCol3A = st.columns([2,1,1,1,2])
+            with vsTopCol1A:
+                store1_vs_selector = st.selectbox("Choose First Store To Compare", options=stores_list, index=0, key="vsStore1")
+            vsTopCol1.image(store_img_display(True, store1_vs_selector))
+            with vsTopCol2:
+                stc.html(VS_IMG_HTML.format())
+            with vsTopCol3A:
+                store2_vs_selector = st.selectbox("Choose Second Store To Compare", options=stores_list, index=0, key="vsStore2")
+            vsTopCol3.image(store_img_display(True, store2_vs_selector))
 
-            st.write("##")
-            st.write(f"Delta Values are All Time Stats for {store_selector}")
+            # date type select
+
+            _, vsDateTypeRadioCol, _ = st.columns([3,5,3])
+            with vsDateTypeRadioCol:
+                #vsDateType = st.radio(label=" ", options=["Day vs Day", "Between Dates", "Weekly", "Monthly", "All-Time"], key="vsDateType", horizontal=True)
+                st.markdown("""<div align="center">Choose Date Comparison Type</div>""", unsafe_allow_html=True)
+                vsDateType = st.selectbox(" ", options=["Day vs Day", "Between Dates", "Weekly", "Monthly", "All-Time"], index=0, key="vsDateType")                
+                st.write("##")
+                #st.write("##")
+
+            # comparision section
+
+            vsCompare1, vsCompare2 , vsComparemid, vsCompare3, vsCompare4 = st.columns([4,3,1,3,4])
+
+            vsCompare2.markdown(f"""### <div align="center">{store1_vs_selector}</div>""", unsafe_allow_html=True)
+            vsComparemid.write("---")
+            vsCompare3.markdown(f"""### <div align="center">{store2_vs_selector}</div>""", unsafe_allow_html=True)
+            vsComparemid.write("---")
+
+            # formatting looks fucked consider css card or just text
             
+            #vsCompare2.metric(label="Revenue", value=f"${1:.2f}", delta="-", delta_color="off")
+            #vsCompare3.metric(label="Revenue", value=f"${1:.2f}", delta="-", delta_color="off")
 
-
-
-        # THEN QUICKLY FINISH THIS METRIC THEN BOSH DO STORE COMPARE THEN IMG TING FOR BOTTOM BIT
-        # THEN THOSE OTHER CHARTS ON OTHER PAGE
-        # THEN THE NOTES FROM THE WEDNESDAY SECTION IN TOD0_NOTES.TXT
-
-
-        # ---- COMPARE 2 DATES ----
-        if userCompareSelect == "Store vs Store":
-
-            storeVsCol1, storeVsCol2 = st.columns(2)
-            with storeVsCol1:
-                store1_vs_selector = st.selectbox("Choose First Store To Compare", options=stores_list, index=0, key="store1vs") 
-            with storeVsCol2:
-                store2_vs_selector = st.selectbox("Choose Second Store To Compare", options=stores_list, index=0, key="store2vs")                 
-            
 
             # FOR METRIC COMPARE 2 STORES (which now do want tbf)
             # SO IG MAKE THIS A LOOP, TO DO IT FOR BOTH SIDES (left right) / QUERIES / STORE + BOTH_DATES
@@ -558,8 +604,42 @@ def run():
 
             # FOR 2 COMPARE HAVE THE DELTA BE THE PREVIOUS METRIC (as in the all time stats) 
 
-
+            st.write("##")
+            st.write("##")
+            st.write("##")
             st.write("---")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         # ---- DAYS OF THE WEEK ----
@@ -646,7 +726,7 @@ def run():
             def calc_and_get_metric_impact_img(metric:float):
                 """ write me """
                 # use a dictionary to store the impact and output img path
-                impact_dict = {-4:"imgs/battery_0.png", 0:"imgs/battery_1.png", 1.5:"imgs/battery_2.png", 3:"imgs/battery_3.png", 4.5:"imgs/battery_5.png"}
+                impact_dict = {-4:"imgs/battery_0.png", -2:"imgs/battery_00.png", 0:"imgs/battery_1.png", 1.5:"imgs/battery_2.png", 3:"imgs/battery_3.png", 4.5:"imgs/battery_5.png"}
                 # use built in min function with key parameter lambda which uses the absolute value
                 impact_int = min(impact_dict, key=lambda x:abs(x-metric))
                 impact_img_path = impact_dict[impact_int]
@@ -661,7 +741,7 @@ def run():
             # The Metric
             avgCol, monCol, tueCol, wedCol, thuCol, friCol, satCol, sunCol = st.columns(8)
 
-            avgCol.markdown("##### Week Average")
+            avgCol.markdown("##### Week Avg")
             avgCol.write(f"{days_available_count} Days of Data")
             if breakdown_type == "store revenue":
                 avgCol.metric(label="Revenue", value=f"${float(weekavg_rev):.2f}", delta="-", delta_color="off")
@@ -958,12 +1038,46 @@ def run():
                 elif breakdown_type == "coffee sales":
                     sunCol.metric(label="Coffees Solid", value="N/A")                                        
 
-            #print(weekBreakdownDict)
+            with st.expander("Image Key", expanded=True):
+                keyavgCol, keymonCol, keytueCol, keywedCol, keythuCol, keyfriCol, keysatCol, keysunCol = st.columns(8)
+                keyavgCol.write("##")
+                keyavgCol.write("##")
+                keyavgCol.markdown("#### Image Key")
+                keyavgCol.markdown("The closest to...")
+                #monCol.write("##")
+                #monCol.write("##")
+                keymonCol.write("##")
+                keymonCol.markdown("### -4%")
+                keymonCol.image(calc_and_get_metric_impact_img(-4), width=80)
+                #tueCol.write("##")
+                #tueCol.write("##")
+                keytueCol.write("##")
+                keytueCol.markdown("### -2%")
+                keytueCol.image(calc_and_get_metric_impact_img(-2), width=80)
+                #wedCol.write("##")
+                #wedCol.write("##")
+                keywedCol.write("##")
+                keywedCol.markdown("### 0%")
+                keywedCol.image(calc_and_get_metric_impact_img(0), width=80)
+                #thuCol.write("##")
+                #thuCol.write("##")
+                keythuCol.write("##")
+                keythuCol.markdown("### 1.5%")
+                keythuCol.image(calc_and_get_metric_impact_img(1.5), width=80)       
+                #friCol.write("##")
+                #friCol.write("##")
+                keyfriCol.write("##")
+                keyfriCol.markdown("### 3%")
+                keyfriCol.image(calc_and_get_metric_impact_img(3), width=80)    
+                #satCol.write("##")
+                #satCol.write("##")
+                keysatCol.write("##")
+                keysatCol.markdown("### 4.5%")
+                keysatCol.image(calc_and_get_metric_impact_img(4.5), width=80)    
 
-            # PUT AVG SPEND AND THE REST IN THERE OR SECTION OUT - TEST TO SEE CAUSE HAVE TO CONSIDER FORMATTING FOR N/A (should be fine tbf?)
 
-        # NEXT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        # then ig quickly implement between 2 days, month
+
+
 
 
 
@@ -979,8 +1093,6 @@ def run():
 
 
 
-
-
 # driver
 try:
     run()
@@ -988,5 +1100,7 @@ except snowflake.connector.errors.ProgrammingError:
     # testing error handling for app losing connection, rerun connection singleton, initialise connection, then run web app
     db.init_connection()
     conn = db.init_connection()
+    # UPTIME function
     run()
+
 
