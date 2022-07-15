@@ -557,11 +557,23 @@ def run():
     # ---- NEW SECTION ----
 
         # ---- Compare 2 Stores ----
+
         if userCompareSelect == "Store vs Store":             
 
             st.write("##")
 
-            # store select
+            # ---- date type select - OLD before tabs in v1.11.0 ----
+
+            #_, vsDateTypeRadioCol, _ = st.columns([3,5,3])
+            #with vsDateTypeRadioCol:
+            #    #vsDateType = st.radio(label=" ", options=["Day vs Day", "Between Dates", "Weekly", "Monthly", "All-Time"], key="vsDateType", horizontal=True)
+            #    st.markdown("""<div align="center">Choose Date Comparison Type</div>""", unsafe_allow_html=True)
+            #    vsDateType = st.selectbox(" ", options=["Day vs Day", "Between Dates", "Weekly", "Monthly", "All-Time"], index=0, key="vsDateType")                
+            #    st.write("##")
+            #    #st.write("##")
+
+
+            # ---- store select ----
 
             vsTopCol1A, vsTopCol1 , vsTopCol2, vsTopCol3, vsTopCol3A = st.columns([2,1,1,1,2])
             with vsTopCol1A:
@@ -570,27 +582,38 @@ def run():
             with vsTopCol2:
                 stc.html(VS_IMG_HTML.format())
             with vsTopCol3A:
-                store2_vs_selector = st.selectbox("Choose Second Store To Compare", options=stores_list, index=0, key="vsStore2")
+                store2_vs_selector = st.selectbox("Choose Second Store To Compare", options=stores_list, index=1, key="vsStore2")
             vsTopCol3.image(store_img_display(True, store2_vs_selector))
 
-            # date type select
+            # ---- comparision section ----
 
-            _, vsDateTypeRadioCol, _ = st.columns([3,5,3])
-            with vsDateTypeRadioCol:
-                #vsDateType = st.radio(label=" ", options=["Day vs Day", "Between Dates", "Weekly", "Monthly", "All-Time"], key="vsDateType", horizontal=True)
-                st.markdown("""<div align="center">Choose Date Comparison Type</div>""", unsafe_allow_html=True)
-                vsDateType = st.selectbox(" ", options=["Day vs Day", "Between Dates", "Weekly", "Monthly", "All-Time"], index=0, key="vsDateType")                
-                st.write("##")
-                #st.write("##")
 
-            # comparision section
+            # WHERE current_day BETWEEN '{user_start_date}' AND '{user_end_date}'
 
-            vsCompare1, vsCompare2 , vsComparemid, vsCompare3, vsCompare4 = st.columns([4,3,1,3,4])
+            vs1StoreBaseData = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
+                                        SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE store_name = '{store1_vs_selector}';")
+            
+            vs2StoreBaseData = run_query(f"SELECT SUM(total_revenue_for_day), AVG(avg_spend_per_customer_for_day), \
+                                        SUM(total_customers_for_day), SUM(total_coffees_sold_for_day) FROM redshift_bizinsights WHERE store_name = '{store2_vs_selector}';")
+            
+            #vsCompare2.markdown(f"""### <div align="center">{store1_vs_selector}</div>""", unsafe_allow_html=True)
 
-            vsCompare2.markdown(f"""### <div align="center">{store1_vs_selector}</div>""", unsafe_allow_html=True)
-            vsComparemid.write("---")
-            vsCompare3.markdown(f"""### <div align="center">{store2_vs_selector}</div>""", unsafe_allow_html=True)
-            vsComparemid.write("---")
+
+            vstab1, vstab2, vstab3, vstab4 = st.tabs(["Day vs Day", "Between Dates", "Monthly", "All-Time"])
+
+            vsInfoCol, vsMainCol1, vsMidCol, vsMainCol3, _ = st.columns([2,1,1,1,2], gap="large")
+            vsMainCol1.metric(label="Revenue", value=f"${1:.2f}", delta="-", delta_color="off", help="tooltip")
+            vsMidCol.write("")
+            vsMainCol3.metric(label="Revenue", value=f"${1:.2f}", delta="-", delta_color="off", help="tooltip")
+            vsInfoCol.date_input(label="Select The Day")
+            
+            # FFS START REFACTOR - WHY, CAUSE LOOK HERE, STORE VS STORE MAKES NO SENSE AS YOU ALREADY SELECTED ONE
+            # THEN ITS GOT DATES WHEN DATES WERE ABOVE TOO
+            # LEGIT JUST BREAK UP EVERYTHING INTO ITS OWN PAGES AND IG TBF CLEAN THIS UP AS IS STILL GOOD FOR PORTFOLIO
+
+            # TRY NEW GAP & TABS, JUST GET THIS DONE
+            # PORT TO DB
+            # DO OWN OTHER PROJECT
 
             # formatting looks fucked consider css card or just text
             
