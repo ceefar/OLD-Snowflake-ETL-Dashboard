@@ -276,3 +276,5 @@ def run():
 
 
 run()
+# UPTIME function
+#db.keepy_uppy()

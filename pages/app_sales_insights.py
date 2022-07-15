@@ -525,7 +525,7 @@ def run():
                     st.markdown("##### :nerd_face: Extensively Commented Breakdown of Dynamic Query Creation (Live Code) :nerd_face:")
                     with st.echo():
 
-                         # complex (multi-step) and complicated (significantly dynamic logic) queries
+                        # complex (multi-step) and complicated (significantly dynamic logic) queries
                         # as they require flavour and size info, and be null compatible 
                         # dealt with separately for scalability and readability (as opposed to one query with multiple boolean flags -> not scalable)
 
@@ -936,6 +936,9 @@ def run():
             ToDcol3.write("Worst Sales")
             ToDcol3.metric(label=break_worst_name, value=break_worst_count, delta=1, delta_color="normal")
 
+
 run()
+# UPTIME function
+#db.keepy_uppy()
 
 
